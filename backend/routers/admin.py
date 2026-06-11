@@ -1,0 +1,86 @@
+from datetime import datetime, timezone
+from fastapi import APIRouter, HTTPException
+from db import get_client
+from models import AdminTeamUpdate, AdminQuestOverride, AdminBossOverride
+from routers.team import _fetch_state
+
+router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+@router.get("/teams")
+def list_teams():
+    db = get_client()
+    return db.table("teams").select("*").order("id").execute().data
+
+
+@router.get("/teams/{team_id}")
+def get_team(team_id: int):
+    return _fetch_state(team_id)
+
+
+@router.patch("/teams/{team_id}")
+def update_team(team_id: int, body: AdminTeamUpdate):
+    db = get_client()
+    updates = body.model_dump(exclude_none=True)
+    if not updates:
+        raise HTTPException(400, "Nothing to update")
+    if "difficulty" in updates and updates["difficulty"] not in ("easy", "normal", "hard"):
+        raise HTTPException(400, "difficulty must be easy, normal, or hard")
+    res = db.table("teams").update(updates).eq("id", team_id).execute()
+    if not res.data:
+        raise HTTPException(404, "Team not found")
+    return {"ok": True}
+
+
+@router.put("/teams/{team_id}/quest/{quest_id}")
+def override_quest(team_id: int, quest_id: int, body: AdminQuestOverride):
+    db = get_client()
+    now = datetime.now(timezone.utc).isoformat() if body.completed else None
+    db.table("team_quest_progress").upsert({
+        "team_id": team_id,
+        "quest_id": quest_id,
+        "completed": body.completed,
+        "completed_at": now,
+    }).execute()
+    return {"ok": True}
+
+
+@router.put("/teams/{team_id}/boss/{boss_id}")
+def override_boss(team_id: int, boss_id: int, body: AdminBossOverride):
+    db = get_client()
+    now = datetime.now(timezone.utc).isoformat() if body.defeated else None
+    db.table("team_boss_defeats").upsert({
+        "team_id": team_id,
+        "boss_id": boss_id,
+        "defeated": body.defeated,
+        "defeated_at": now,
+    }).execute()
+    return {"ok": True}
+
+
+@router.post("/teams/{team_id}/reset")
+def reset_team(team_id: int):
+    db = get_client()
+    db.table("team_quest_progress").update({"completed": False, "completed_at": None}).eq("team_id", team_id).execute()
+    db.table("team_boss_defeats").update({"defeated": False, "defeated_at": None}).eq("team_id", team_id).execute()
+    return {"ok": True}
+
+
+@router.post("/reset-all")
+def reset_all():
+    db = get_client()
+    db.table("team_quest_progress").update({"completed": False, "completed_at": None}).neq("team_id", 0).execute()
+    db.table("team_boss_defeats").update({"defeated": False, "defeated_at": None}).neq("team_id", 0).execute()
+    return {"ok": True}
+
+
+@router.get("/quests")
+def list_quests():
+    db = get_client()
+    return db.table("quests").select("*").order("boss_id").order("order_index").execute().data
+
+
+@router.get("/bosses")
+def list_bosses():
+    db = get_client()
+    return db.table("bosses").select("*").order("order_index").execute().data
