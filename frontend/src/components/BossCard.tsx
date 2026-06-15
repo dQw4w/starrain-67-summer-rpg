@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle, Lock, MapPin, Swords } from 'lucide-react'
+import { CheckCircle, Lock, MapPin, QrCode } from 'lucide-react'
 import type { Boss, Quest } from '../types'
 import QuestModal from './QuestModal'
+import QrScanner from './QrScanner'
 import TapBattle from './TapBattle'
 
 interface Props {
@@ -14,7 +15,8 @@ interface Props {
 export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [showLocation, setShowLocation] = useState(false)
-  const [battling, setBattling] = useState(false)
+  const [scanning, setScanning] = useState(false)   // QR scan step
+  const [battling, setBattling] = useState(false)   // tap battle step
 
   const doneCount = boss.quests.filter(q => q.completed).length
   const total = boss.quests.length
@@ -124,11 +126,11 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
 
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => setBattling(true)}
+              onClick={() => setScanning(true)}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-red to-brand-orange text-white font-black text-lg shadow-lg shadow-red-500/30 flex items-center justify-center gap-2"
             >
-              <Swords size={22} />
-              挑戰 {boss.name}！
+              <QrCode size={22} />
+              掃描QR碼挑戰 {boss.name}！
             </motion.button>
           </div>
         )}
@@ -142,6 +144,15 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
             const ok = await onQuestSubmit(activeQuest.id, idx, text)
             return ok
           }}
+        />
+      )}
+
+      {scanning && (
+        <QrScanner
+          bossId={boss.id}
+          bossName={boss.name}
+          onSuccess={() => { setScanning(false); setBattling(true) }}
+          onClose={() => setScanning(false)}
         />
       )}
 
