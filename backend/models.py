@@ -47,7 +47,8 @@ class DifficultyUpdate(BaseModel):
 
 
 class QuestCompleteRequest(BaseModel):
-    answer_index: Optional[int] = None   # for multiple_choice; None for task
+    answer_index: Optional[int] = None   # for multiple_choice
+    answer_text: Optional[str] = None    # for fill_in (hard difficulty)
 
 
 class AdminTeamUpdate(BaseModel):

@@ -103,25 +103,30 @@ def complete_quest(team_id: int, quest_id: int, body: QuestCompleteRequest):
     db = get_client()
 
     # Verify team exists
-    team_res = db.table("teams").select("difficulty").eq("id", team_id).single().execute()
+    team_res = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
     if not team_res.data:
         raise HTTPException(404, "Team not found")
 
     difficulty = team_res.data["difficulty"]
-    quest_res = db.table("quests").select("*").eq("id", quest_id).single().execute()
+    quest_res = db.table("quests").select("*").eq("id", quest_id).maybe_single().execute()
     if not quest_res.data:
         raise HTTPException(404, "Quest not found")
 
     quest = quest_res.data
+    options: list[dict] | None = quest.get(f"options_{difficulty}")
 
-    # Validate answer for multiple_choice
-    if quest["type"] == "multiple_choice":
-        options: list[dict] | None = quest.get(f"options_{difficulty}")
-        if options and body.answer_index is not None:
-            if body.answer_index < 0 or body.answer_index >= len(options):
-                raise HTTPException(400, "Invalid answer index")
-            if not options[body.answer_index]["correct"]:
-                return {"ok": False, "correct": False}
+    if options and len(options) > 1:
+        # Multiple choice: validate answer_index
+        if body.answer_index is None or body.answer_index < 0 or body.answer_index >= len(options):
+            raise HTTPException(400, "Invalid answer index")
+        if not options[body.answer_index]["correct"]:
+            return {"ok": False, "correct": False}
+    elif options and len(options) == 1:
+        # Fill-in: validate answer_text against options[0]["text"]
+        correct_answer = options[0]["text"].strip()
+        submitted = (body.answer_text or "").strip()
+        if submitted != correct_answer:
+            return {"ok": False, "correct": False}
 
     now = datetime.now(timezone.utc).isoformat()
     db.table("team_quest_progress").upsert({

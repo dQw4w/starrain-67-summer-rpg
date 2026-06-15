@@ -20,10 +20,10 @@ export const api = {
       body: JSON.stringify({ difficulty }),
     }),
 
-  completeQuest: (teamId: number, questId: number, answerIndex?: number) =>
+  completeQuest: (teamId: number, questId: number, answerIndex?: number, answerText?: string) =>
     req<{ ok: boolean; correct: boolean }>(`/team/${teamId}/quest/${questId}/complete`, {
       method: 'POST',
-      body: JSON.stringify({ answer_index: answerIndex ?? null }),
+      body: JSON.stringify({ answer_index: answerIndex ?? null, answer_text: answerText ?? null }),
     }),
 
   defeatBoss: (teamId: number, bossId: number) =>

@@ -7,7 +7,7 @@ import TapBattle from './TapBattle'
 
 interface Props {
   boss: Boss
-  onQuestSubmit: (questId: number, answerIndex?: number) => Promise<boolean>
+  onQuestSubmit: (questId: number, answerIndex?: number, answerText?: string) => Promise<boolean>
   onDefeat: (bossId: number) => Promise<void>
 }
 
@@ -138,8 +138,8 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
         <QuestModal
           quest={activeQuest}
           onClose={() => setActiveQuest(null)}
-          onSubmit={async (idx) => {
-            const ok = await onQuestSubmit(activeQuest.id, idx)
+          onSubmit={async (idx, text) => {
+            const ok = await onQuestSubmit(activeQuest.id, idx, text)
             return ok
           }}
         />

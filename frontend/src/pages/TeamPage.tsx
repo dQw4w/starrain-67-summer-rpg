@@ -46,8 +46,8 @@ export default function TeamPage() {
     return () => clearInterval(t)
   }, [load])
 
-  const handleQuestSubmit = async (questId: number, answerIndex?: number): Promise<boolean> => {
-    const res = await api.completeQuest(id, questId, answerIndex)
+  const handleQuestSubmit = async (questId: number, answerIndex?: number, answerText?: string): Promise<boolean> => {
+    const res = await api.completeQuest(id, questId, answerIndex, answerText)
     if (res.correct) await load()
     return res.correct
   }
