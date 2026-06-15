@@ -42,4 +42,6 @@ export const api = {
     req(`/admin/teams/${teamId}/reset`, { method: 'POST' }),
   adminResetAll: () =>
     req('/admin/reset-all', { method: 'POST' }),
+  adminListBosses: () =>
+    req<{ id: number; name: string; emoji: string; location_name: string; location_hint: string }[]>('/admin/bosses'),
 }

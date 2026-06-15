@@ -70,7 +70,7 @@ def _build_team_state(team: dict, bosses_raw: list, quests_raw: list,
 
 def _fetch_state(team_id: int) -> TeamState:
     db = get_client()
-    team_res = db.table("teams").select("*").eq("id", team_id).single().execute()
+    team_res = db.table("teams").select("*").eq("id", team_id).maybe_single().execute()
     if not team_res.data:
         raise HTTPException(404, "Team not found")
 

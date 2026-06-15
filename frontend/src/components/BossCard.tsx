@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Swords, CheckCircle, Lock, MapPin } from 'lucide-react'
+import { CheckCircle, Lock, MapPin, Swords } from 'lucide-react'
 import type { Boss, Quest } from '../types'
 import QuestModal from './QuestModal'
+import TapBattle from './TapBattle'
 
 interface Props {
   boss: Boss
@@ -13,17 +14,11 @@ interface Props {
 export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [showLocation, setShowLocation] = useState(false)
-  const [defeating, setDefeating] = useState(false)
+  const [battling, setBattling] = useState(false)
 
   const doneCount = boss.quests.filter(q => q.completed).length
   const total = boss.quests.length
   const progress = total > 0 ? doneCount / total : 0
-
-  const handleDefeat = async () => {
-    setDefeating(true)
-    await onDefeat(boss.id)
-    setDefeating(false)
-  }
 
   return (
     <>
@@ -40,7 +35,7 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <motion.div
-            animate={boss.defeated ? {} : boss.all_quests_done ? { scale: [1, 1.1, 1] } : {}}
+            animate={!boss.defeated && boss.all_quests_done ? { scale: [1, 1.1, 1] } : {}}
             transition={{ repeat: Infinity, duration: 1.5 }}
             className="text-5xl"
           >
@@ -48,7 +43,9 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
           </motion.div>
           <div className="flex-1">
             <h3 className="text-xl font-black text-white">
-              {boss.defeated ? <span className="line-through opacity-50">{boss.name}</span> : boss.name}
+              {boss.defeated
+                ? <span className="line-through opacity-50">{boss.name}</span>
+                : boss.name}
             </h3>
             <p className="text-white/50 text-sm">{boss.location_name}</p>
           </div>
@@ -98,7 +95,7 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
           </div>
         )}
 
-        {/* Fight button or location reveal */}
+        {/* Battle section */}
         {!boss.defeated && boss.all_quests_done && (
           <div className="space-y-3">
             <motion.button
@@ -113,9 +110,9 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
             <AnimatePresence>
               {showLocation && boss.location_hint && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  exit={{ opacity: 0, y: -8 }}
                   className="bg-yellow-500/10 border border-brand-yellow/30 rounded-2xl p-4 text-center"
                 >
                   <p className="text-brand-yellow font-bold text-sm leading-relaxed">
@@ -127,12 +124,11 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
 
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={handleDefeat}
-              disabled={defeating}
+              onClick={() => setBattling(true)}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-red to-brand-orange text-white font-black text-lg shadow-lg shadow-red-500/30 flex items-center justify-center gap-2"
             >
               <Swords size={22} />
-              {defeating ? '戰鬥中...' : `挑戰 ${boss.name}！`}
+              挑戰 {boss.name}！
             </motion.button>
           </div>
         )}
@@ -146,6 +142,15 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
             const ok = await onQuestSubmit(activeQuest.id, idx)
             return ok
           }}
+        />
+      )}
+
+      {battling && (
+        <TapBattle
+          bossEmoji={boss.emoji}
+          bossName={boss.name}
+          onVictory={async () => { await onDefeat(boss.id) }}
+          onClose={() => setBattling(false)}
         />
       )}
     </>

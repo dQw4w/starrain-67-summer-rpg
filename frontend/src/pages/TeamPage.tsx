@@ -5,7 +5,6 @@ import { RefreshCw } from 'lucide-react'
 import type { TeamState } from '../types'
 import { api } from '../api'
 import BossCard from '../components/BossCard'
-import PuzzleBoard from '../components/PuzzleBoard'
 import DifficultyModal from '../components/DifficultyModal'
 
 const LONG_PRESS_MS = 1500
@@ -19,18 +18,10 @@ export default function TeamPage() {
   const [error, setError] = useState<string | null>(null)
   const [showDifficulty, setShowDifficulty] = useState(false)
 
-  // Long-press on team name to open difficulty selector
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pressCount = useRef(0)
 
   const startPress = () => {
-    pressTimer.current = setTimeout(() => {
-      pressCount.current += 1
-      if (pressCount.current >= 1) {
-        setShowDifficulty(true)
-        pressCount.current = 0
-      }
-    }, LONG_PRESS_MS)
+    pressTimer.current = setTimeout(() => setShowDifficulty(true), LONG_PRESS_MS)
   }
   const cancelPress = () => {
     if (pressTimer.current) clearTimeout(pressTimer.current)
@@ -50,7 +41,6 @@ export default function TeamPage() {
 
   useEffect(() => { load() }, [load])
 
-  // Poll every 15 seconds
   useEffect(() => {
     const t = setInterval(load, 15000)
     return () => clearInterval(t)
@@ -74,18 +64,19 @@ export default function TeamPage() {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-        className="text-5xl"
-      >
-        🦆
-      </motion.div>
+      <motion.img
+        src="/goodduck.png"
+        alt="好棒鴨"
+        className="w-24 h-24 object-contain"
+        animate={{ rotate: [0, 10, -10, 0] }}
+        transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+      />
     </div>
   )
 
   if (error || !state) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6">
+      <img src="/goodduck.png" alt="好棒鴨" className="w-20 h-20 object-contain opacity-40" />
       <p className="text-red-400 font-bold text-center">{error || '找不到小隊'}</p>
       <button onClick={load} className="flex items-center gap-2 bg-white/10 px-6 py-3 rounded-full text-white">
         <RefreshCw size={18} /> 重試
@@ -96,17 +87,25 @@ export default function TeamPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a0a2e] via-[#0d1b4b] to-[#0a1628] px-4 py-6 max-w-xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div
-          className="select-none cursor-default"
+          className="flex items-center gap-3 select-none cursor-default"
           onMouseDown={startPress}
           onMouseUp={cancelPress}
           onTouchStart={startPress}
           onTouchEnd={cancelPress}
         >
-          <motion.div className="text-4xl mb-1 animate-float">🦆</motion.div>
-          <h1 className="text-2xl font-black text-white">{state.name}</h1>
-          <p className="text-white/40 text-xs">好棒鴨探險隊</p>
+          <motion.img
+            src="/goodduck.png"
+            alt="好棒鴨"
+            className="w-16 h-16 object-contain"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
+          />
+          <div>
+            <h1 className="text-2xl font-black text-white leading-tight">{state.name}</h1>
+            <p className="text-white/40 text-xs">好棒鴨探險隊</p>
+          </div>
         </div>
 
         <button
@@ -115,15 +114,6 @@ export default function TeamPage() {
         >
           <RefreshCw size={20} />
         </button>
-      </div>
-
-      {/* Puzzle progress */}
-      <div className="mb-6">
-        <PuzzleBoard
-          pieces={state.puzzle_pieces}
-          total={state.total_bosses}
-          victory={state.victory}
-        />
       </div>
 
       {/* Boss cards */}
@@ -146,15 +136,25 @@ export default function TeamPage() {
         </div>
       )}
 
+      {/* Victory screen */}
       {state.victory && (
         <motion.div
-          className="text-center py-12 space-y-4"
+          className="flex flex-col items-center py-16 gap-6 text-center"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          <div className="text-8xl animate-float">🎉</div>
-          <p className="text-brand-yellow font-black text-3xl">任務完成！</p>
-          <p className="text-white/60 text-lg">好棒鴨探險隊萬歲！</p>
+          <motion.img
+            src="/goodduck.png"
+            alt="好棒鴨"
+            className="w-40 h-40 object-contain"
+            animate={{ y: [0, -12, 0], rotate: [-5, 5, -5] }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+          />
+          <div>
+            <p className="text-brand-yellow font-black text-3xl">任務完成！</p>
+            <p className="text-white/60 text-lg mt-2">好棒鴨得救了！</p>
+            <p className="text-white/40 text-sm mt-1">好棒鴨探險隊萬歲！🎉</p>
+          </div>
         </motion.div>
       )}
 

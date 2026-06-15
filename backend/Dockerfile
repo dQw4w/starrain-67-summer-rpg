@@ -2,7 +2,7 @@ FROM node:20-slim AS frontend-builder
 ARG FRONTEND_BUST=1
 WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci
+RUN npm install
 COPY frontend/ .
 RUN npx vite build --outDir /out --emptyOutDir
 
