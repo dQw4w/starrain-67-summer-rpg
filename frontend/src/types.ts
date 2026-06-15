@@ -1,6 +1,7 @@
 export interface QuestOption {
-  text: string
-  correct: boolean
+  text?: string
+  correct?: boolean
+  count?: number  // photo_task: number of photos required
 }
 
 export interface Quest {

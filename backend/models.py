@@ -3,8 +3,9 @@ from pydantic import BaseModel
 
 
 class QuestOption(BaseModel):
-    text: str
-    correct: bool
+    text: Optional[str] = None      # multiple_choice / fill_in
+    correct: Optional[bool] = None  # multiple_choice / fill_in
+    count: Optional[int] = None     # photo_task: number of photos required
 
 
 class Quest(BaseModel):

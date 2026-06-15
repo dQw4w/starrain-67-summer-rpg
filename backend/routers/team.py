@@ -115,13 +115,17 @@ def complete_quest(team_id: int, quest_id: int, body: QuestCompleteRequest):
     quest = quest_res.data
     options: list[dict] | None = quest.get(f"options_{difficulty}")
 
-    if options and len(options) > 1:
+    quest_type = quest.get("type", "task")
+
+    if quest_type == "photo_task":
+        pass  # staff verify photos in person; always accepted
+    elif options and len(options) > 1:
         # Multiple choice: validate answer_index
         if body.answer_index is None or body.answer_index < 0 or body.answer_index >= len(options):
             raise HTTPException(400, "Invalid answer index")
         if not options[body.answer_index]["correct"]:
             return {"ok": False, "correct": False}
-    elif options and len(options) == 1:
+    elif options and len(options) == 1 and "text" in options[0]:
         # Fill-in: validate answer_text against options[0]["text"]
         correct_answer = options[0]["text"].strip()
         submitted = (body.answer_text or "").strip()
