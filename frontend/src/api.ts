@@ -26,6 +26,17 @@ export const api = {
       body: JSON.stringify({ answer_index: answerIndex ?? null, answer_text: answerText ?? null }),
     }),
 
+  uploadQuestPhotos: async (teamId: number, questId: number, files: File[]) => {
+    const fd = new FormData()
+    files.forEach(f => fd.append('files', f))
+    const res = await fetch(`${BASE}/team/${teamId}/quest/${questId}/photos`, {
+      method: 'POST',
+      body: fd, // let the browser set multipart boundary; do NOT set Content-Type
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json() as Promise<{ ok: boolean; correct: boolean }>
+  },
+
   defeatBoss: (teamId: number, bossId: number) =>
     req(`/team/${teamId}/boss/${bossId}/defeat`, { method: 'POST' }),
 
@@ -44,4 +55,11 @@ export const api = {
     req('/admin/reset-all', { method: 'POST' }),
   adminListBosses: () =>
     req<{ id: number; name: string; emoji: string; location_name: string; location_hint: string }[]>('/admin/bosses'),
+
+  adminTeamPhotos: (teamId: number) =>
+    req<{ name: string; quest_id: number | null; quest_name: string | null; url: string }[]>(
+      `/admin/teams/${teamId}/photos`,
+    ),
+  adminTeamPhotosZipUrl: (teamId: number) => `${BASE}/admin/teams/${teamId}/photos.zip`,
+  adminAllPhotosZipUrl: () => `${BASE}/admin/photos.zip`,
 }

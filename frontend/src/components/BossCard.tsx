@@ -10,10 +10,11 @@ import BossImage from './BossImage'
 interface Props {
   boss: Boss
   onQuestSubmit: (questId: number, answerIndex?: number, answerText?: string) => Promise<boolean>
+  onPhotoSubmit: (questId: number, files: File[]) => Promise<boolean>
   onDefeat: (bossId: number) => Promise<void>
 }
 
-export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
+export default function BossCard({ boss, onQuestSubmit, onPhotoSubmit, onDefeat }: Props) {
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [showLocation, setShowLocation] = useState(false)
   const [scanning, setScanning] = useState(false)   // QR scan step
@@ -147,6 +148,7 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
             const ok = await onQuestSubmit(activeQuest.id, idx, text)
             return ok
           }}
+          onSubmitPhotos={files => onPhotoSubmit(activeQuest.id, files)}
         />
       )}
 

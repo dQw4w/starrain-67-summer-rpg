@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, RotateCcw, ExternalLink, CheckCircle, Circle, Shield, Eye, EyeOff, QrCode } from 'lucide-react'
+import { RefreshCw, RotateCcw, ExternalLink, CheckCircle, Circle, Shield, Eye, EyeOff, QrCode, Images, Download, ImageOff, X } from 'lucide-react'
 import type { TeamState, Boss } from '../types'
 import { api } from '../api'
 
@@ -67,6 +67,85 @@ const DIFF_META: Record<string, { label: string; color: string }> = {
   hard:   { label: '🔥 困難', color: 'text-red-400' },
 }
 
+// ── Team photo gallery / download ────────────────────────────────────────────
+type PhotoItem = { name: string; quest_id: number | null; quest_name: string | null; url: string }
+
+function PhotosModal({ teamId, teamName, onClose }: { teamId: number; teamName: string; onClose: () => void }) {
+  const [photos, setPhotos] = useState<PhotoItem[] | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    api.adminTeamPhotos(teamId).then(setPhotos).catch(() => setError(true))
+  }, [teamId])
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        className="w-full max-w-2xl max-h-[88dvh] bg-[#15151f] rounded-t-3xl sm:rounded-3xl border border-white/10 flex flex-col overflow-hidden"
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+          <div className="min-w-0">
+            <h3 className="text-white font-black truncate">{teamName}・上傳照片</h3>
+            <p className="text-white/40 text-xs">{photos ? `${photos.length} 張` : '載入中…'}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {photos && photos.length > 0 && (
+              <a
+                href={api.adminTeamPhotosZipUrl(teamId)}
+                className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold px-3 py-2 rounded-xl"
+              >
+                <Download size={15} /> 下載全部
+              </a>
+            )}
+            <button onClick={onClose} className="text-white/40 hover:text-white p-1">
+              <X size={22} />
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-y-auto p-5">
+          {error ? (
+            <p className="text-red-400 text-center py-12">載入失敗，請重試</p>
+          ) : !photos ? (
+            <p className="text-white/40 text-center py-12">載入中…</p>
+          ) : photos.length === 0 ? (
+            <div className="text-center py-14 text-white/30">
+              <ImageOff size={36} className="mx-auto mb-3" />
+              <p>這組還沒有上傳任何照片</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {photos.map(p => (
+                <div key={p.name} className="bg-white/5 rounded-2xl overflow-hidden border border-white/10">
+                  <a href={p.url} target="_blank" rel="noreferrer" className="block aspect-square bg-black/40">
+                    <img src={p.url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
+                  </a>
+                  <div className="flex items-center justify-between gap-1 px-2.5 py-2">
+                    <span className="text-white/50 text-xs truncate">
+                      {p.quest_name ?? (p.quest_id ? `任務 ${p.quest_id}` : '照片')}
+                    </span>
+                    <a href={`${p.url}?dl=1`} className="text-purple-400 hover:text-purple-300 shrink-0" title="下載這張">
+                      <Download size={15} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 // ── Per-team card ────────────────────────────────────────────────────────────
 function TeamCard({
   team,
@@ -83,6 +162,7 @@ function TeamCard({
 }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [showPhotos, setShowPhotos] = useState(false)
 
   const wrap = async (key: string, fn: () => Promise<void>) => {
     setBusy(key)
@@ -96,6 +176,7 @@ function TeamCard({
   const teamUrl = `${window.location.origin}/team/${team.team_id}`
 
   return (
+    <>
     <div className="bg-white/5 rounded-3xl border border-white/10 overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-5 pb-4 border-b border-white/10">
@@ -106,14 +187,22 @@ function TeamCard({
               任務 {doneQuests}/{totalQuests} · 魔王 {defeatedBosses}/{team.total_bosses}
             </p>
           </div>
-          <a
-            href={teamUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 shrink-0 mt-1"
-          >
-            開啟介面 <ExternalLink size={12} />
-          </a>
+          <div className="flex items-center gap-3 shrink-0 mt-1">
+            <button
+              onClick={() => setShowPhotos(true)}
+              className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors"
+            >
+              <Images size={13} /> 照片
+            </button>
+            <a
+              href={teamUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300"
+            >
+              開啟介面 <ExternalLink size={12} />
+            </a>
+          </div>
         </div>
 
         {/* Progress bar */}
@@ -223,6 +312,13 @@ function TeamCard({
         ))}
       </div>
     </div>
+
+    <AnimatePresence>
+      {showPhotos && (
+        <PhotosModal teamId={team.team_id} teamName={team.name} onClose={() => setShowPhotos(false)} />
+      )}
+    </AnimatePresence>
+    </>
   )
 }
 
@@ -340,15 +436,23 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* QR Code link */}
-      <a
-        href="/admin/qr"
-        target="_blank"
-        rel="noreferrer"
-        className="flex items-center justify-center gap-2 w-full mb-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors font-bold text-sm"
-      >
-        <QrCode size={16} /> 列印魔王 QR 碼
-      </a>
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <a
+          href="/admin/qr"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors font-bold text-sm"
+        >
+          <QrCode size={16} /> 列印魔王 QR 碼
+        </a>
+        <a
+          href={api.adminAllPhotosZipUrl()}
+          className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors font-bold text-sm"
+        >
+          <Download size={16} /> 下載全部照片
+        </a>
+      </div>
 
       {/* Team overview strip */}
       <div className="grid grid-cols-3 gap-3 mb-6">

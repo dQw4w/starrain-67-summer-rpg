@@ -8,9 +8,10 @@ interface Props {
   quest: Quest
   onClose: () => void
   onSubmit: (answerIndex?: number, answerText?: string) => Promise<boolean>
+  onSubmitPhotos?: (files: File[]) => Promise<boolean>
 }
 
-export default function QuestModal({ quest, onClose, onSubmit }: Props) {
+export default function QuestModal({ quest, onClose, onSubmit, onSubmitPhotos }: Props) {
   const [selected, setSelected]           = useState<number | null>(null)
   const [fillText, setFillText]           = useState('')
   const [result, setResult]               = useState<'correct' | 'wrong' | null>(null)
@@ -32,7 +33,8 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
 
   // Photo task state
   const photoCount: number = quest.type === 'photo_task' ? (quest.options?.[0]?.count ?? 1) : 0
-  const [photos, setPhotos] = useState<(string | null)[]>(Array(photoCount).fill(null))
+  const [photos, setPhotos] = useState<(string | null)[]>(Array(photoCount).fill(null))      // preview URLs
+  const [photoFiles, setPhotoFiles] = useState<(File | null)[]>(Array(photoCount).fill(null)) // actual files to upload
   const photoRefs  = useRef<(HTMLInputElement | null)[]>([])  // camera (capture)
   const uploadRefs = useRef<(HTMLInputElement | null)[]>([])  // gallery / files
 
@@ -57,17 +59,25 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
     const file = e.target.files?.[0]
     if (!file) return
     setPhotos(prev => { const n = [...prev]; n[index] = URL.createObjectURL(file); return n })
+    setPhotoFiles(prev => { const n = [...prev]; n[index] = file; return n })
   }
 
   const handleSubmit = async () => {
     if (!canSubmit || loading) return
     setLoading(true)
-    const correct = await (
-      isMultiChoice ? onSubmit(selected!) :
-      isFillIn      ? onSubmit(undefined, fillText.trim()) :
-      isDragMatch   ? onSubmit(undefined, JSON.stringify(matchPlacements)) :
-                      onSubmit()
-    )
+    let correct: boolean
+    if (isPhotoTask) {
+      const files = photoFiles.filter((f): f is File => f !== null)
+      correct = onSubmitPhotos ? await onSubmitPhotos(files) : await onSubmit()
+    } else if (isMultiChoice) {
+      correct = await onSubmit(selected!)
+    } else if (isFillIn) {
+      correct = await onSubmit(undefined, fillText.trim())
+    } else if (isDragMatch) {
+      correct = await onSubmit(undefined, JSON.stringify(matchPlacements))
+    } else {
+      correct = await onSubmit()
+    }
     setLoading(false)
     setResult(correct ? 'correct' : 'wrong')
     if (correct) setTimeout(onClose, 1200)
@@ -214,7 +224,10 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
                       <>
                         <img src={photos[i]!} alt={`照片 ${i + 1}`} className="w-full h-full object-cover" />
                         <button
-                          onClick={() => setPhotos(prev => { const n = [...prev]; n[i] = null; return n })}
+                          onClick={() => {
+                            setPhotos(prev => { const n = [...prev]; n[i] = null; return n })
+                            setPhotoFiles(prev => { const n = [...prev]; n[i] = null; return n })
+                          }}
                           className="absolute top-1.5 right-1.5 bg-black/60 text-white rounded-full p-1"
                         >
                           <X size={14} />

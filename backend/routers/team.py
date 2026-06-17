@@ -1,9 +1,10 @@
 import json
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from db import get_client
 from models import TeamState, Boss, Quest, QuestOption, DifficultyUpdate, QuestCompleteRequest
 from content import BOSSES, QUESTS, BOSS_QUESTS, TEAMS, QuestDef, Diff
+from storage import BUCKET, ALLOWED_EXT
 
 router = APIRouter(prefix="/api/team", tags=["team"])
 
@@ -112,6 +113,54 @@ def complete_quest(team_id: int, quest_id: int, body: QuestCompleteRequest):
     elif options and len(options) == 1 and "text" in options[0]:
         if (body.answer_text or "").strip() != options[0]["text"].strip():
             return {"ok": False, "correct": False}
+
+    now = datetime.now(timezone.utc).isoformat()
+    db.table("team_quest_progress").upsert({
+        "team_id": team_id, "quest_id": quest_id,
+        "completed": True, "completed_at": now,
+    }).execute()
+    return {"ok": True, "correct": True}
+
+
+@router.post("/{team_id}/quest/{quest_id}/photos")
+async def upload_quest_photos(
+    team_id: int,
+    quest_id: int,
+    files: list[UploadFile] = File(...),
+):
+    """Upload photo-task images to Supabase Storage, then mark the quest done."""
+    if team_id not in TEAMS:
+        raise HTTPException(404, "Team not found")
+    quest_def = QUESTS.get(quest_id)
+    if not quest_def:
+        raise HTTPException(404, "Quest not found")
+    if quest_def.type != "photo_task":
+        raise HTTPException(400, "This quest does not accept photos")
+    if not files:
+        raise HTTPException(400, "No files uploaded")
+
+    db = get_client()
+    store = db.storage.from_(BUCKET)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+
+    uploaded = 0
+    for idx, f in enumerate(files):
+        data = await f.read()
+        if not data:
+            continue
+        ext = (f.filename or "").rsplit(".", 1)[-1].lower()
+        if ext not in ALLOWED_EXT:
+            ext = "jpg"
+        path = f"team-{team_id}/q{quest_id}-{stamp}-{idx}.{ext}"
+        store.upload(
+            path,
+            data,
+            {"content-type": f.content_type or "image/jpeg", "upsert": "true"},
+        )
+        uploaded += 1
+
+    if uploaded == 0:
+        raise HTTPException(400, "No valid images uploaded")
 
     now = datetime.now(timezone.utc).isoformat()
     db.table("team_quest_progress").upsert({

@@ -7,11 +7,13 @@ from fastapi.responses import FileResponse, JSONResponse
 from routers import team, admin
 from db import get_client
 from migrate import run_migrations
+from storage import ensure_bucket
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     run_migrations()
+    ensure_bucket()
     yield
 
 

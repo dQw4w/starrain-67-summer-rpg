@@ -52,6 +52,12 @@ export default function TeamPage() {
     return res.correct
   }
 
+  const handlePhotoSubmit = async (questId: number, files: File[]): Promise<boolean> => {
+    await api.uploadQuestPhotos(id, questId, files)
+    await load()
+    return true
+  }
+
   const handleDefeat = async (bossId: number) => {
     await api.defeatBoss(id, bossId)
     await load()
@@ -129,6 +135,7 @@ export default function TeamPage() {
               <BossCard
                 boss={boss}
                 onQuestSubmit={handleQuestSubmit}
+                onPhotoSubmit={handlePhotoSubmit}
                 onDefeat={handleDefeat}
               />
             </motion.div>
