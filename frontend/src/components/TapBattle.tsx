@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import BossImage from './BossImage'
 
 const TOTAL_HP = 60
+const GRACE_MS = 600  // ignore all touches for this long after mount
 
 type Hit = { id: number; x: number; y: number }
 
@@ -20,11 +21,19 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
   const [hits, setHits] = useState<Hit[]>([])
   const [hitCount, setHitCount] = useState(0)
   const [won, setWon] = useState(false)
+  const [ready, setReady] = useState(false)
   const hpRef = useRef(TOTAL_HP)
   const nextId = useRef(0)
   const winFired = useRef(false)
 
+  // Grace period: swallow any stray pointer events left over from the QR scan phase
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), GRACE_MS)
+    return () => clearTimeout(t)
+  }, [])
+
   const handleTap = useCallback(async (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!ready) return
     e.preventDefault()
     if (hpRef.current <= 0) return
 
@@ -45,7 +54,7 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
       await onVictory()
       setTimeout(onClose, 2200)
     }
-  }, [onVictory, onClose])
+  }, [ready, onVictory, onClose])
 
   const pct = (hp / TOTAL_HP) * 100
   const hpColor =
@@ -66,7 +75,7 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
       {!won && (
         <button
           className="absolute top-4 left-4 z-20 text-white/25 hover:text-white/60 p-2"
-          onPointerDown={e => { e.stopPropagation(); onClose() }}
+          onClick={e => { e.stopPropagation(); onClose() }}
         >
           <X size={20} />
         </button>
@@ -109,14 +118,24 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
       {/* Tap prompt – only shown when not won */}
       {!won && (
         <div className="absolute inset-0 top-[280px] flex items-center justify-center pointer-events-none">
-          <motion.div
-            className="text-center"
-            animate={{ scale: [1, 1.04, 1] }}
-            transition={{ repeat: Infinity, duration: 0.9 }}
-          >
-            <p className="text-white/20 text-3xl font-black">點擊攻擊！</p>
-            <p className="text-white/10 text-base mt-1">大家一起連續點擊！</p>
-          </motion.div>
+          {ready ? (
+            <motion.div
+              className="text-center"
+              animate={{ scale: [1, 1.04, 1] }}
+              transition={{ repeat: Infinity, duration: 0.9 }}
+            >
+              <p className="text-white/20 text-3xl font-black">點擊攻擊！</p>
+              <p className="text-white/10 text-base mt-1">大家一起連續點擊！</p>
+            </motion.div>
+          ) : (
+            <motion.p
+              className="text-brand-yellow/60 text-2xl font-black"
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ repeat: Infinity, duration: 0.6 }}
+            >
+              準備！
+            </motion.p>
+          )}
         </div>
       )}
 
