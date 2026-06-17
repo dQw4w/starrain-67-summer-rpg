@@ -138,7 +138,7 @@ export default function MatchQuest({ options, onChange }: Props) {
       <div className="flex h-full" style={{ gap: '15%' }}>
 
         {/* Animals — left column */}
-        <div className="flex flex-col gap-3 flex-1 h-full" style={{ position: 'relative', zIndex: 10 }}>
+        <div className="flex flex-col justify-evenly flex-1 h-full" style={{ position: 'relative', zIndex: 10 }}>
           {shuffledAnimals.map(animal => {
             const lvl    = animalLevel(animal)
             const c      = lvl ? LC[lvl] : null
@@ -153,7 +153,7 @@ export default function MatchQuest({ options, onChange }: Props) {
                   if (l) { const n = { ...connections }; delete n[l]; setConn(n) }
                 }}
                 className={[
-                  'flex-1 min-h-10 px-4 flex items-center rounded-2xl border-2 font-bold text-sm',
+                  'h-11 px-4 flex items-center rounded-xl border-2 font-bold text-base',
                   'cursor-grab active:cursor-grabbing transition-all',
                   active
                     ? 'border-white/80 bg-white/25 text-white scale-105 shadow-xl shadow-white/10'
@@ -163,14 +163,14 @@ export default function MatchQuest({ options, onChange }: Props) {
                 ].join(' ')}
               >
                 <span className="truncate">{animal}</span>
-                {lvl && !active && <span className="ml-auto text-xs opacity-40 shrink-0 pl-2">✓</span>}
+                {lvl && !active && <span className="ml-auto text-sm opacity-40 shrink-0 pl-2">✓</span>}
               </div>
             )
           })}
         </div>
 
         {/* Levels — right column */}
-        <div className="flex flex-col gap-3 flex-1 h-full" style={{ position: 'relative', zIndex: 10 }}>
+        <div className="flex flex-col justify-evenly flex-1 h-full" style={{ position: 'relative', zIndex: 10 }}>
           {levels.map(level => {
             const c       = LC[level]
             const placed  = connections[level]
@@ -180,13 +180,13 @@ export default function MatchQuest({ options, onChange }: Props) {
                 key={level}
                 ref={el => { levelRefs.current[level] = el }}
                 className={[
-                  'flex-1 min-h-10 px-4 flex flex-col justify-center rounded-2xl border-2 transition-all',
+                  'h-11 px-4 flex flex-col justify-center rounded-xl border-2 transition-all',
                   c.bg, c.border,
                   isHover ? 'ring-2 ring-white/50 scale-[1.04]' : '',
                 ].join(' ')}
               >
-                <span className={`font-black text-xs ${c.text}`}>{level}</span>
-                {placed && <span className="text-white/80 text-sm font-bold truncate mt-0.5">{placed}</span>}
+                <span className={`font-black text-sm ${c.text}`}>{level}</span>
+                {placed && <span className="text-white/80 text-base font-bold truncate leading-tight">{placed}</span>}
               </div>
             )
           })}
