@@ -153,7 +153,7 @@ export default function MatchQuest({ options, onChange }: Props) {
                   if (l) { const n = { ...connections }; delete n[l]; setConn(n) }
                 }}
                 className={[
-                  'h-11 px-4 flex items-center rounded-xl border-2 font-bold text-base',
+                  'h-16 px-4 flex items-center rounded-xl border-2 font-bold text-2xl',
                   'cursor-grab active:cursor-grabbing transition-all',
                   active
                     ? 'border-white/80 bg-white/25 text-white scale-105 shadow-xl shadow-white/10'
@@ -180,13 +180,13 @@ export default function MatchQuest({ options, onChange }: Props) {
                 key={level}
                 ref={el => { levelRefs.current[level] = el }}
                 className={[
-                  'h-11 px-4 flex flex-col justify-center rounded-xl border-2 transition-all',
+                  'h-16 px-4 flex flex-col justify-center rounded-xl border-2 transition-all',
                   c.bg, c.border,
                   isHover ? 'ring-2 ring-white/50 scale-[1.04]' : '',
                 ].join(' ')}
               >
-                <span className={`font-black text-sm ${c.text}`}>{level}</span>
-                {placed && <span className="text-white/80 text-base font-bold truncate leading-tight">{placed}</span>}
+                <span className={`font-black text-base ${c.text}`}>{level}</span>
+                {placed && <span className="text-white/80 text-xl font-bold truncate leading-tight">{placed}</span>}
               </div>
             )
           })}
