@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Camera, AlertCircle } from 'lucide-react'
 
@@ -18,7 +18,10 @@ interface Props {
 export default function QrScanner({ bossId, bossName, onSuccess, onClose }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [scanned, setScanned] = useState(false)
-  const scannerRef = useRef<{ stop: () => Promise<void>; isScanning: boolean } | null>(null)
+  const scannerRef   = useRef<{ stop: () => Promise<void>; isScanning: boolean } | null>(null)
+  const onSuccessRef = useRef(onSuccess)
+  // Keep ref current without restarting the scanner effect
+  useLayoutEffect(() => { onSuccessRef.current = onSuccess })
 
   useEffect(() => {
     let stopped = false
@@ -38,7 +41,7 @@ export default function QrScanner({ bossId, bossName, onSuccess, onClose }: Prop
             if (text.trim() === bossQrContent(bossId)) {
               stopped = true
               setScanned(true)
-              scanner.stop().catch(() => {}).finally(() => setTimeout(onSuccess, 800))
+              scanner.stop().catch(() => {}).finally(() => setTimeout(() => onSuccessRef.current(), 800))
             } else {
               setError('QR碼不符，請掃描正確的魔王QR碼！')
               setTimeout(() => setError(null), 2000)
@@ -55,7 +58,7 @@ export default function QrScanner({ bossId, bossName, onSuccess, onClose }: Prop
       stopped = true
       scannerRef.current?.stop().catch(() => {})
     }
-  }, [bossId, onSuccess])
+  }, [bossId]) // intentionally omit onSuccess — kept current via ref above
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
