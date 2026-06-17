@@ -5,4 +5,4 @@ load_dotenv()
 
 SUPABASE_URL: str = os.environ["SUPABASE_URL"]
 SUPABASE_KEY: str = os.environ["SUPABASE_KEY"]
-DATABASE_URL: str = os.environ["DATABASE_URL"]   # Supabase direct Postgres URI
+SUPABASE_ACCESS_TOKEN: str = os.environ["SUPABASE_ACCESS_TOKEN"]
