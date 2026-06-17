@@ -33,7 +33,8 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
   // Photo task state
   const photoCount: number = quest.type === 'photo_task' ? (quest.options?.[0]?.count ?? 1) : 0
   const [photos, setPhotos] = useState<(string | null)[]>(Array(photoCount).fill(null))
-  const photoRefs = useRef<(HTMLInputElement | null)[]>([])
+  const photoRefs  = useRef<(HTMLInputElement | null)[]>([])  // camera (capture)
+  const uploadRefs = useRef<(HTMLInputElement | null)[]>([])  // gallery / files
 
   const isPhotoTask   = quest.type === 'photo_task'
   const isDragMatch   = quest.type === 'drag_match'
@@ -220,13 +221,21 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => photoRefs.current[i]?.click()}
-                        className="w-full h-full flex flex-col items-center justify-center gap-2 text-white/40 hover:text-white/70 transition-colors"
-                      >
-                        <ImagePlus size={28} />
-                        <span className="text-xs">第 {i + 1} 張</span>
-                      </button>
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 p-1">
+                        <span className="text-white/40 text-xs mb-0.5">第 {i + 1} 張</span>
+                        <button
+                          onClick={() => photoRefs.current[i]?.click()}
+                          className="flex items-center gap-1 text-white/70 hover:text-white text-xs bg-white/10 rounded-full px-3 py-1.5"
+                        >
+                          <Camera size={13} /> 拍照
+                        </button>
+                        <button
+                          onClick={() => uploadRefs.current[i]?.click()}
+                          className="flex items-center gap-1 text-white/70 hover:text-white text-xs bg-white/10 rounded-full px-3 py-1.5"
+                        >
+                          <ImagePlus size={13} /> 上傳
+                        </button>
+                      </div>
                     )}
                     <input
                       ref={el => { photoRefs.current[i] = el }}
@@ -234,18 +243,34 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
                       className="hidden"
                       onChange={e => handlePhotoChange(i, e)}
                     />
+                    <input
+                      ref={el => { uploadRefs.current[i] = el }}
+                      type="file" accept="image/*"
+                      className="hidden"
+                      onChange={e => handlePhotoChange(i, e)}
+                    />
                   </div>
                 ))}
               </div>
               {photoCount === 1 && (
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => photoRefs.current[0]?.click()}
-                  className="w-full py-3 rounded-2xl bg-white/10 border-2 border-white/20 text-white font-bold flex items-center justify-center gap-2"
-                >
-                  <Camera size={18} />
-                  {photos[0] ? '重新拍攝' : '開啟相機拍照'}
-                </motion.button>
+                <div className="grid grid-cols-2 gap-3">
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => photoRefs.current[0]?.click()}
+                    className="py-3 rounded-2xl bg-white/10 border-2 border-white/20 text-white font-bold flex items-center justify-center gap-2"
+                  >
+                    <Camera size={18} />
+                    {photos[0] ? '重拍' : '拍照'}
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => uploadRefs.current[0]?.click()}
+                    className="py-3 rounded-2xl bg-white/10 border-2 border-white/20 text-white font-bold flex items-center justify-center gap-2"
+                  >
+                    <ImagePlus size={18} />
+                    上傳照片
+                  </motion.button>
+                </div>
               )}
             </div>
           )}

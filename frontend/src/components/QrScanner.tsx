@@ -24,7 +24,18 @@ export default function QrScanner({ bossId, bossName, onSuccess, onClose }: Prop
   useLayoutEffect(() => { onSuccessRef.current = onSuccess })
 
   useEffect(() => {
-    let stopped = false
+    let stopped = false      // true once we've matched or unmounted
+    let didStop = false      // ensures scanner.stop() is only ever called once
+
+    const safeStop = (s: { stop: () => Promise<void> }) => {
+      if (didStop) return Promise.resolve()
+      didStop = true
+      try {
+        return s.stop().catch(() => {})
+      } catch {
+        return Promise.resolve()
+      }
+    }
 
     import('html5-qrcode').then(({ Html5Qrcode }) => {
       if (stopped) return
@@ -41,7 +52,7 @@ export default function QrScanner({ bossId, bossName, onSuccess, onClose }: Prop
             if (text.trim() === bossQrContent(bossId)) {
               stopped = true
               setScanned(true)
-              scanner.stop().catch(() => {}).finally(() => setTimeout(() => onSuccessRef.current(), 800))
+              safeStop(scanner).finally(() => setTimeout(() => onSuccessRef.current(), 800))
             } else {
               setError('QR碼不符，請掃描正確的魔王QR碼！')
               setTimeout(() => setError(null), 2000)
@@ -56,7 +67,7 @@ export default function QrScanner({ bossId, bossName, onSuccess, onClose }: Prop
 
     return () => {
       stopped = true
-      scannerRef.current?.stop().catch(() => {})
+      if (scannerRef.current) safeStop(scannerRef.current)
     }
   }, [bossId]) // intentionally omit onSuccess — kept current via ref above
 

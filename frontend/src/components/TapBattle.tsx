@@ -51,7 +51,12 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
     if (newHp <= 0 && !winFired.current) {
       winFired.current = true
       setWon(true)
-      await onVictory()
+      try {
+        await onVictory()
+      } catch (err) {
+        // Don't let a failed API call blank the screen; victory UI still shows
+        console.error('defeatBoss failed:', err)
+      }
       setTimeout(onClose, 2200)
     }
   }, [ready, onVictory, onClose])
