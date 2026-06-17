@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from db import get_client
 from models import AdminTeamUpdate, AdminQuestOverride, AdminBossOverride
 from routers.team import _fetch_state
+from content import BOSSES, QUESTS
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -76,11 +77,17 @@ def reset_all():
 
 @router.get("/quests")
 def list_quests():
-    db = get_client()
-    return db.table("quests").select("*").order("boss_id").order("order_index").execute().data
+    return [
+        {"id": q.id, "boss_id": q.boss_id, "name": q.name,
+         "emoji": q.emoji, "type": q.type, "order_index": q.order_index}
+        for q in sorted(QUESTS.values(), key=lambda x: (x.boss_id, x.order_index))
+    ]
 
 
 @router.get("/bosses")
 def list_bosses():
-    db = get_client()
-    return db.table("bosses").select("*").order("order_index").execute().data
+    return [
+        {"id": b.id, "name": b.name, "emoji": b.emoji,
+         "location_name": b.location_name, "order_index": b.order_index}
+        for b in sorted(BOSSES.values(), key=lambda x: x.order_index)
+    ]

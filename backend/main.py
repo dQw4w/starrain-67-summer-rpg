@@ -23,4 +23,8 @@ if STATIC_DIR.exists():
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
+        # Serve real files (images, fonts, etc.) first, then fall back to SPA
+        file_path = STATIC_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
         return FileResponse(STATIC_DIR / "index.html")

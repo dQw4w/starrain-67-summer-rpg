@@ -1,19 +1,21 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
+import BossImage from './BossImage'
 
 const TOTAL_HP = 60
 
 type Hit = { id: number; x: number; y: number }
 
 interface Props {
+  bossId: number
   bossEmoji: string
   bossName: string
   onVictory: () => Promise<void>
   onClose: () => void
 }
 
-export default function TapBattle({ bossEmoji, bossName, onVictory, onClose }: Props) {
+export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onClose }: Props) {
   const [hp, setHp] = useState(TOTAL_HP)
   const [hits, setHits] = useState<Hit[]>([])
   const [hitCount, setHitCount] = useState(0)
@@ -74,16 +76,18 @@ export default function TapBattle({ bossEmoji, bossName, onVictory, onClose }: P
       <div className="absolute top-0 left-0 right-0 flex flex-col items-center pt-8 px-6 gap-4 pointer-events-none">
         <p className="text-white/40 text-xs font-bold tracking-widest uppercase">⚔️ 挑戰 {bossName}</p>
 
-        {/* Boss emoji – shakes on each hit */}
+        {/* Boss image – shakes on each hit */}
         <motion.div
           key={hitCount}
-          className="text-[90px] leading-none"
+          className="w-28 h-28"
           animate={hitCount > 0 && !won
             ? { x: [-8, 8, -5, 5, 0], rotate: [-4, 4, -2, 2, 0] }
             : {}}
           transition={{ duration: 0.28 }}
         >
-          {won ? '💀' : bossEmoji}
+          {won
+            ? <span className="text-[90px] leading-none flex items-center justify-center w-full h-full">💀</span>
+            : <BossImage bossId={bossId} emoji={bossEmoji} className="w-full h-full" />}
         </motion.div>
 
         {/* HP bar */}

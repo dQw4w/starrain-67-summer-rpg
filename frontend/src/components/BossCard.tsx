@@ -5,6 +5,7 @@ import type { Boss, Quest } from '../types'
 import QuestModal from './QuestModal'
 import QrScanner from './QrScanner'
 import TapBattle from './TapBattle'
+import BossImage from './BossImage'
 
 interface Props {
   boss: Boss
@@ -39,9 +40,11 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
           <motion.div
             animate={!boss.defeated && boss.all_quests_done ? { scale: [1, 1.1, 1] } : {}}
             transition={{ repeat: Infinity, duration: 1.5 }}
-            className="text-5xl"
+            className="w-16 h-16 shrink-0"
           >
-            {boss.defeated ? '✅' : boss.emoji}
+            {boss.defeated
+              ? <span className="text-5xl flex items-center justify-center w-full h-full">✅</span>
+              : <BossImage bossId={boss.id} emoji={boss.emoji} className="w-full h-full" />}
           </motion.div>
           <div className="flex-1">
             <h3 className="text-xl font-black text-white">
@@ -158,6 +161,7 @@ export default function BossCard({ boss, onQuestSubmit, onDefeat }: Props) {
 
       {battling && (
         <TapBattle
+          bossId={boss.id}
           bossEmoji={boss.emoji}
           bossName={boss.name}
           onVictory={async () => { await onDefeat(boss.id) }}

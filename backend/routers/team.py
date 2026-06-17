@@ -1,56 +1,50 @@
 from datetime import datetime, timezone
-from typing import Any
 from fastapi import APIRouter, HTTPException
 from db import get_client
-from models import (
-    TeamState, Boss, Quest, QuestOption,
-    DifficultyUpdate, QuestCompleteRequest,
-)
+from models import TeamState, Boss, Quest, QuestOption, DifficultyUpdate, QuestCompleteRequest
+from content import BOSSES, QUESTS, BOSS_QUESTS, QuestDef, Diff
 
 router = APIRouter(prefix="/api/team", tags=["team"])
 
 
-def _resolve_quest(raw: dict, difficulty: str, progress: dict) -> Quest:
-    desc = raw[f"description_{difficulty}"]
-    options_raw: list[dict] | None = raw.get(f"options_{difficulty}")
-    options = [QuestOption(**o) for o in options_raw] if options_raw else None
-    prog = progress.get(raw["id"], {})
+def _resolve_quest(q: QuestDef, diff: Diff, progress_map: dict) -> Quest:
+    options = [QuestOption(**o) for o in diff.options] if diff.options else None
+    prog = progress_map.get(q.id, {})
     return Quest(
-        id=raw["id"],
-        boss_id=raw["boss_id"],
-        name=raw["name"],
-        emoji=raw["emoji"],
-        type=raw["type"],
-        description=desc,
+        id=q.id,
+        boss_id=q.boss_id,
+        name=q.name,
+        emoji=q.emoji,
+        type=q.type,
+        description=diff.description,
         options=options,
         completed=prog.get("completed", False),
         completed_at=prog.get("completed_at"),
     )
 
 
-def _build_team_state(team: dict, bosses_raw: list, quests_raw: list,
-                      quest_progress: list, boss_defeats: list) -> TeamState:
+def _build_team_state(team: dict, quest_progress: list, boss_defeats: list) -> TeamState:
     difficulty = team["difficulty"]
-
     progress_map: dict[int, dict] = {r["quest_id"]: r for r in quest_progress}
     defeat_map: dict[int, dict] = {r["boss_id"]: r for r in boss_defeats}
 
     boss_list: list[Boss] = []
-    for b in sorted(bosses_raw, key=lambda x: x["order_index"]):
-        bqs = [q for q in quests_raw if q["boss_id"] == b["id"]]
-        bqs.sort(key=lambda x: x["order_index"])
-        resolved = [_resolve_quest(q, difficulty, progress_map) for q in bqs]
-        all_done = bool(resolved) and all(q.completed for q in resolved)
-        defeat = defeat_map.get(b["id"], {})
+    for boss_def in sorted(BOSSES.values(), key=lambda b: b.order_index):
+        quests = [
+            _resolve_quest(q, getattr(q, difficulty), progress_map)
+            for q in sorted(BOSS_QUESTS[boss_def.id], key=lambda q: q.order_index)
+        ]
+        all_done = bool(quests) and all(q.completed for q in quests)
+        defeat = defeat_map.get(boss_def.id, {})
         defeated = defeat.get("defeated", False)
         boss_list.append(Boss(
-            id=b["id"],
-            name=b["name"],
-            emoji=b["emoji"],
-            location_name=b["location_name"],
-            location_hint=b["location_hint"] if all_done else None,
-            order_index=b["order_index"],
-            quests=resolved,
+            id=boss_def.id,
+            name=boss_def.name,
+            emoji=boss_def.emoji,
+            location_name=boss_def.location_name,
+            location_hint=boss_def.location_hint if all_done else None,
+            order_index=boss_def.order_index,
+            quests=quests,
             all_quests_done=all_done,
             defeated=defeated,
             defeated_at=defeat.get("defeated_at"),
@@ -73,13 +67,9 @@ def _fetch_state(team_id: int) -> TeamState:
     team_res = db.table("teams").select("*").eq("id", team_id).maybe_single().execute()
     if not team_res.data:
         raise HTTPException(404, "Team not found")
-
-    bosses = db.table("bosses").select("*").execute().data
-    quests = db.table("quests").select("*").execute().data
     progress = db.table("team_quest_progress").select("*").eq("team_id", team_id).execute().data
     defeats = db.table("team_boss_defeats").select("*").eq("team_id", team_id).execute().data
-
-    return _build_team_state(team_res.data, bosses, quests, progress, defeats)
+    return _build_team_state(team_res.data, progress, defeats)
 
 
 @router.get("/{team_id}", response_model=TeamState)
@@ -102,34 +92,27 @@ def set_difficulty(team_id: int, body: DifficultyUpdate):
 def complete_quest(team_id: int, quest_id: int, body: QuestCompleteRequest):
     db = get_client()
 
-    # Verify team exists
     team_res = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
     if not team_res.data:
         raise HTTPException(404, "Team not found")
 
-    difficulty = team_res.data["difficulty"]
-    quest_res = db.table("quests").select("*").eq("id", quest_id).maybe_single().execute()
-    if not quest_res.data:
+    quest_def = QUESTS.get(quest_id)
+    if not quest_def:
         raise HTTPException(404, "Quest not found")
 
-    quest = quest_res.data
-    options: list[dict] | None = quest.get(f"options_{difficulty}")
+    difficulty = team_res.data["difficulty"]
+    diff: Diff = getattr(quest_def, difficulty)
+    options = diff.options  # raw dicts for validation
 
-    quest_type = quest.get("type", "task")
-
-    if quest_type == "photo_task":
+    if quest_def.type == "photo_task":
         pass  # staff verify photos in person; always accepted
     elif options and len(options) > 1:
-        # Multiple choice: validate answer_index
         if body.answer_index is None or body.answer_index < 0 or body.answer_index >= len(options):
             raise HTTPException(400, "Invalid answer index")
         if not options[body.answer_index]["correct"]:
             return {"ok": False, "correct": False}
     elif options and len(options) == 1 and "text" in options[0]:
-        # Fill-in: validate answer_text against options[0]["text"]
-        correct_answer = options[0]["text"].strip()
-        submitted = (body.answer_text or "").strip()
-        if submitted != correct_answer:
+        if (body.answer_text or "").strip() != options[0]["text"].strip():
             return {"ok": False, "correct": False}
 
     now = datetime.now(timezone.utc).isoformat()
@@ -139,7 +122,6 @@ def complete_quest(team_id: int, quest_id: int, body: QuestCompleteRequest):
         "completed": True,
         "completed_at": now,
     }).execute()
-
     return {"ok": True, "correct": True}
 
 
@@ -147,9 +129,7 @@ def complete_quest(team_id: int, quest_id: int, body: QuestCompleteRequest):
 def defeat_boss(team_id: int, boss_id: int):
     db = get_client()
 
-    # Ensure all quests for this boss are done
-    quests_res = db.table("quests").select("id").eq("boss_id", boss_id).execute()
-    quest_ids = [q["id"] for q in quests_res.data]
+    quest_ids = [q.id for q in BOSS_QUESTS.get(boss_id, [])]
     if quest_ids:
         progress_res = (
             db.table("team_quest_progress")
@@ -169,5 +149,4 @@ def defeat_boss(team_id: int, boss_id: int):
         "defeated": True,
         "defeated_at": now,
     }).execute()
-
     return {"ok": True}

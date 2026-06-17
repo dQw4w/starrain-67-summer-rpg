@@ -9,7 +9,7 @@ export interface Quest {
   boss_id: number
   name: string
   emoji: string
-  type: 'multiple_choice' | 'task'
+  type: 'multiple_choice' | 'task' | 'fill_in' | 'photo_task'
   description: string
   options: QuestOption[] | null
   completed: boolean
