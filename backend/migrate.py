@@ -13,6 +13,10 @@ _PROJECT_REF = re.match(r"https://([^.]+)\.supabase\.co", SUPABASE_URL).group(1)
 _SQL_ENDPOINT = f"https://api.supabase.com/v1/projects/{_PROJECT_REF}/database/query"
 
 _SCHEMA = """
+-- Drop FK constraints that reference old quests/bosses tables (content now lives in code)
+ALTER TABLE IF EXISTS team_quest_progress DROP CONSTRAINT IF EXISTS team_quest_progress_quest_id_fkey;
+ALTER TABLE IF EXISTS team_boss_defeats   DROP CONSTRAINT IF EXISTS team_boss_defeats_boss_id_fkey;
+
 CREATE TABLE IF NOT EXISTS teams (
     id         INTEGER PRIMARY KEY,
     name       TEXT    NOT NULL,
