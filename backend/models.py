@@ -4,8 +4,10 @@ from pydantic import BaseModel
 
 class QuestOption(BaseModel):
     text: Optional[str] = None      # multiple_choice / fill_in
-    correct: Optional[bool] = None  # multiple_choice / fill_in
-    count: Optional[int] = None     # photo_task: number of photos required
+    correct: Optional[bool] = None  # multiple_choice
+    count: Optional[int] = None     # photo_task
+    animal: Optional[str] = None    # drag_match
+    level: Optional[str] = None     # drag_match
 
 
 class Quest(BaseModel):

@@ -1,7 +1,9 @@
 export interface QuestOption {
   text?: string
   correct?: boolean
-  count?: number  // photo_task: number of photos required
+  count?: number    // photo_task
+  animal?: string   // drag_match
+  level?: string    // drag_match
 }
 
 export interface Quest {
@@ -9,7 +11,7 @@ export interface Quest {
   boss_id: number
   name: string
   emoji: string
-  type: 'multiple_choice' | 'task' | 'fill_in' | 'photo_task'
+  type: 'multiple_choice' | 'task' | 'fill_in' | 'photo_task' | 'drag_match'
   description: string
   options: QuestOption[] | null
   completed: boolean

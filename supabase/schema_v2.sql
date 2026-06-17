@@ -47,7 +47,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO team_quest_progress (team_id, quest_id, completed)
 SELECT t.id, q.quest_id, FALSE
 FROM teams t
-CROSS JOIN (VALUES (1),(2),(3),(4),(5),(6)) AS q(quest_id)
+CROSS JOIN (VALUES (1),(2),(3),(4),(5),(6),(7)) AS q(quest_id)
 ON CONFLICT (team_id, quest_id) DO NOTHING;
 
 INSERT INTO team_boss_defeats (team_id, boss_id, defeated)

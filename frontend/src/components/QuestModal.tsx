@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, X, Camera, ImagePlus } from 'lucide-react'
-import type { Quest } from '../types'
+import type { Quest, QuestOption } from '../types'
+import MatchQuest from './MatchQuest'
 
 interface Props {
   quest: Quest
@@ -14,24 +15,29 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
   const [fillText, setFillText] = useState('')
   const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
   const [loading, setLoading] = useState(false)
+  const [matchPlacements, setMatchPlacements] = useState<Record<string, string>>({})
 
   // Photo task state
   const photoCount: number = quest.type === 'photo_task' ? (quest.options?.[0]?.count ?? 1) : 0
   const [photos, setPhotos] = useState<(string | null)[]>(Array(photoCount).fill(null))
   const photoRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  // Determine effective UI mode from options
-  const isMultiChoice = quest.type !== 'photo_task' && !!quest.options && quest.options.length > 1
-  const isFillIn      = quest.type !== 'photo_task' && !!quest.options && quest.options.length === 1
-  const isPhotoTask   = quest.type === 'photo_task'
-  const isTask        = !isMultiChoice && !isFillIn && !isPhotoTask
+  // UI mode detection
+  const isPhotoTask  = quest.type === 'photo_task'
+  const isDragMatch  = quest.type === 'drag_match'
+  const isMultiChoice = !isPhotoTask && !isDragMatch && !!quest.options && quest.options.length > 1
+  const isFillIn      = !isPhotoTask && !isDragMatch && !!quest.options && quest.options.length === 1
+  const isTask        = !isMultiChoice && !isFillIn && !isPhotoTask && !isDragMatch
 
   const allPhotosTaken = photos.every(p => p !== null)
+  const matchOptions = (quest.options ?? []) as QuestOption[]
+  const allMatched = isDragMatch && matchOptions.every(o => Object.values(matchPlacements).includes(o.animal!))
 
   const canSubmit =
     (isMultiChoice && selected !== null) ||
     (isFillIn && fillText.trim().length > 0) ||
     (isPhotoTask && allPhotosTaken) ||
+    (isDragMatch && allMatched) ||
     isTask
 
   const handlePhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +60,8 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
       correct = await onSubmit(selected!)
     } else if (isFillIn) {
       correct = await onSubmit(undefined, fillText.trim())
+    } else if (isDragMatch) {
+      correct = await onSubmit(undefined, JSON.stringify(matchPlacements))
     } else {
       correct = await onSubmit()
     }
@@ -172,6 +180,16 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
                   {photos[0] ? '重新拍攝' : '開啟相機拍照'}
                 </motion.button>
               )}
+            </div>
+          )}
+
+          {/* ── Drag match ── */}
+          {isDragMatch && quest.options && (
+            <div className="mb-6">
+              <MatchQuest
+                options={quest.options}
+                onChange={p => { setMatchPlacements(p); setResult(null) }}
+              />
             </div>
           )}
 

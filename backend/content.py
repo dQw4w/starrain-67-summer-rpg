@@ -15,8 +15,8 @@ class QuestDef:
     boss_id: int
     name: str
     emoji: str
-    # type drives photo_task detection; UI adapts based on options count
-    type: str  # multiple_choice | task | fill_in | photo_task
+    # type drives photo_task/drag_match detection; UI adapts on options count otherwise
+    type: str  # multiple_choice | task | fill_in | photo_task | drag_match
     order_index: int
     easy: Diff
     normal: Diff
@@ -32,6 +32,14 @@ class BossDef:
     location_hint: str
     order_index: int
 
+
+# ── Teams (hardcoded — names never change) ───────────────────────────────────
+
+TEAMS: dict[int, str] = {
+    1: "第一探險小隊",
+    2: "第二探險小隊",
+    3: "第三探險小隊",
+}
 
 # ── Bosses ────────────────────────────────────────────────────────────────────
 
@@ -97,6 +105,38 @@ QUESTS: dict[int, QuestDef] = {
         hard=Diff(
             description='在動物園找到 3 種不同的靈長目動物，全隊分別跟每種合照！',
             options=[{"count": 3}],
+        ),
+    ),
+
+    7: QuestDef(
+        id=7, boss_id=1, name='動物保育知多少', emoji='🌿',
+        type='drag_match', order_index=3,
+        # easy: 2 pairs (最極端的兩個)
+        easy=Diff(
+            description='把每隻動物拖到正確的保育等級！',
+            options=[
+                {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
+                {"animal": "台灣梅花鹿",     "level": "無危 LC"},
+            ],
+        ),
+        # normal: 3 pairs
+        normal=Diff(
+            description='把每隻動物拖到正確的保育等級！',
+            options=[
+                {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
+                {"animal": "蘇卡達象龜",     "level": "瀕危 EN"},
+                {"animal": "台灣梅花鹿",     "level": "無危 LC"},
+            ],
+        ),
+        # hard: all 4 pairs
+        hard=Diff(
+            description='把每隻動物拖到正確的保育等級！',
+            options=[
+                {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
+                {"animal": "蘇卡達象龜",     "level": "瀕危 EN"},
+                {"animal": "河馬",           "level": "易危 VU"},
+                {"animal": "台灣梅花鹿",     "level": "無危 LC"},
+            ],
         ),
     ),
 
