@@ -113,7 +113,7 @@ QUESTS: dict[int, QuestDef] = {
         type='drag_match', order_index=3,
         # easy: 2 pairs (最極端的兩個)
         easy=Diff(
-            description='把每隻動物拖到正確的保育等級！',
+            description='連線配對：把每隻動物和牠的保育等級連起來！',
             options=[
                 {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
                 {"animal": "台灣梅花鹿",     "level": "無危 LC"},
@@ -121,7 +121,7 @@ QUESTS: dict[int, QuestDef] = {
         ),
         # normal: 3 pairs
         normal=Diff(
-            description='把每隻動物拖到正確的保育等級！',
+            description='連線配對：把每隻動物和牠的保育等級連起來！',
             options=[
                 {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
                 {"animal": "蘇卡達象龜",     "level": "瀕危 EN"},
@@ -130,7 +130,7 @@ QUESTS: dict[int, QuestDef] = {
         ),
         # hard: all 4 pairs
         hard=Diff(
-            description='把每隻動物拖到正確的保育等級！',
+            description='連線配對：把每隻動物和牠的保育等級連起來！',
             options=[
                 {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
                 {"animal": "蘇卡達象龜",     "level": "瀕危 EN"},

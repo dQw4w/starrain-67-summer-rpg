@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, X, Camera, ImagePlus } from 'lucide-react'
 import type { Quest, QuestOption } from '../types'
@@ -11,27 +11,39 @@ interface Props {
 }
 
 export default function QuestModal({ quest, onClose, onSubmit }: Props) {
-  const [selected, setSelected] = useState<number | null>(null)
-  const [fillText, setFillText] = useState('')
-  const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [selected, setSelected]           = useState<number | null>(null)
+  const [fillText, setFillText]           = useState('')
+  const [result, setResult]               = useState<'correct' | 'wrong' | null>(null)
+  const [loading, setLoading]             = useState(false)
   const [matchPlacements, setMatchPlacements] = useState<Record<string, string>>({})
+
+  // Portrait detection (only matters for drag_match landscape mode)
+  const [portrait, setPortrait] = useState(
+    () => typeof window !== 'undefined'
+      ? window.matchMedia('(orientation: portrait)').matches
+      : true
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(orientation: portrait)')
+    const h = (e: MediaQueryListEvent) => setPortrait(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
 
   // Photo task state
   const photoCount: number = quest.type === 'photo_task' ? (quest.options?.[0]?.count ?? 1) : 0
   const [photos, setPhotos] = useState<(string | null)[]>(Array(photoCount).fill(null))
   const photoRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  // UI mode detection
-  const isPhotoTask  = quest.type === 'photo_task'
-  const isDragMatch  = quest.type === 'drag_match'
+  const isPhotoTask   = quest.type === 'photo_task'
+  const isDragMatch   = quest.type === 'drag_match'
   const isMultiChoice = !isPhotoTask && !isDragMatch && !!quest.options && quest.options.length > 1
   const isFillIn      = !isPhotoTask && !isDragMatch && !!quest.options && quest.options.length === 1
   const isTask        = !isMultiChoice && !isFillIn && !isPhotoTask && !isDragMatch
 
   const allPhotosTaken = photos.every(p => p !== null)
-  const matchOptions = (quest.options ?? []) as QuestOption[]
-  const allMatched = isDragMatch && matchOptions.every(o => Object.values(matchPlacements).includes(o.animal!))
+  const matchOptions   = (quest.options ?? []) as QuestOption[]
+  const allMatched     = isDragMatch && matchOptions.every(o => Object.values(matchPlacements).includes(o.animal!))
 
   const canSubmit =
     (isMultiChoice && selected !== null) ||
@@ -43,34 +55,91 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
   const handlePhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const url = URL.createObjectURL(file)
-    setPhotos(prev => {
-      const next = [...prev]
-      next[index] = url
-      return next
-    })
+    setPhotos(prev => { const n = [...prev]; n[index] = URL.createObjectURL(file); return n })
   }
 
   const handleSubmit = async () => {
     if (!canSubmit || loading) return
     setLoading(true)
-
-    let correct: boolean
-    if (isMultiChoice) {
-      correct = await onSubmit(selected!)
-    } else if (isFillIn) {
-      correct = await onSubmit(undefined, fillText.trim())
-    } else if (isDragMatch) {
-      correct = await onSubmit(undefined, JSON.stringify(matchPlacements))
-    } else {
-      correct = await onSubmit()
-    }
-
+    const correct = await (
+      isMultiChoice ? onSubmit(selected!) :
+      isFillIn      ? onSubmit(undefined, fillText.trim()) :
+      isDragMatch   ? onSubmit(undefined, JSON.stringify(matchPlacements)) :
+                      onSubmit()
+    )
     setLoading(false)
     setResult(correct ? 'correct' : 'wrong')
     if (correct) setTimeout(onClose, 1200)
   }
 
+  // ── Drag-match: full-screen landscape overlay ──────────────────────────────
+  if (isDragMatch) {
+    const overlayStyle: React.CSSProperties = portrait
+      ? {
+          width:     '100dvh',
+          height:    '100dvw',
+          top:       '50%',
+          left:      '50%',
+          transform: 'translate(-50%, -50%) rotate(90deg)',
+        }
+      : { inset: 0 }
+
+    return (
+      <AnimatePresence>
+        <motion.div
+          className="fixed z-50 bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 flex flex-col overflow-hidden"
+          style={overlayStyle}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-white/10 shrink-0">
+            <span className="text-3xl shrink-0">{quest.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-black text-base leading-tight">{quest.name}</p>
+              <p className="text-white/60 text-xs mt-0.5">{quest.description}</p>
+            </div>
+            <button onClick={onClose} className="text-white/50 hover:text-white shrink-0 p-1">
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* MatchQuest fills remaining height */}
+          <div className="flex-1 overflow-hidden px-5 py-3 min-h-0">
+            <MatchQuest
+              options={quest.options!}
+              onChange={p => { setMatchPlacements(p); setResult(null) }}
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="px-5 pb-4 pt-2 shrink-0 border-t border-white/10">
+            {result === 'wrong' && (
+              <p className="text-center text-red-300 font-bold mb-2 text-sm">❌ 再想想看！</p>
+            )}
+            {result === 'correct' ? (
+              <div className="flex items-center justify-center gap-3">
+                <CheckCircle size={28} className="text-green-400" />
+                <p className="text-green-300 font-black text-lg">完成！</p>
+              </div>
+            ) : (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleSubmit}
+                disabled={loading || !canSubmit}
+                className="w-full py-3 rounded-2xl font-black text-lg shadow-lg disabled:opacity-40 bg-brand-orange text-white shadow-orange-500/30"
+              >
+                {loading ? '確認中...' : '送出答案 🚀'}
+              </motion.button>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    )
+  }
+
+  // ── Normal portrait modal ──────────────────────────────────────────────────
   return (
     <AnimatePresence>
       <motion.div
@@ -96,7 +165,7 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
             {quest.description}
           </p>
 
-          {/* ── Multiple choice ── */}
+          {/* Multiple choice */}
           {isMultiChoice && quest.options && (
             <div className="space-y-3 mb-6">
               {quest.options.map((opt, i) => (
@@ -116,7 +185,7 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
             </div>
           )}
 
-          {/* ── Fill-in ── */}
+          {/* Fill-in */}
           {isFillIn && (
             <div className="mb-6">
               <input
@@ -131,7 +200,7 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
             </div>
           )}
 
-          {/* ── Photo task: N slots ── */}
+          {/* Photo task */}
           {isPhotoTask && (
             <div className="mb-6 space-y-3">
               <p className="text-white/50 text-sm text-center">
@@ -161,9 +230,7 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
                     )}
                     <input
                       ref={el => { photoRefs.current[i] = el }}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
+                      type="file" accept="image/*" capture="environment"
                       className="hidden"
                       onChange={e => handlePhotoChange(i, e)}
                     />
@@ -183,25 +250,13 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
             </div>
           )}
 
-          {/* ── Drag match ── */}
-          {isDragMatch && quest.options && (
-            <div className="mb-6">
-              <MatchQuest
-                options={quest.options}
-                onChange={p => { setMatchPlacements(p); setResult(null) }}
-              />
-            </div>
-          )}
-
-          {/* ── Plain task ── */}
+          {/* Plain task */}
           {isTask && <div className="mb-6" />}
 
-          {/* Wrong answer */}
           {result === 'wrong' && (
             <p className="text-center text-red-300 font-bold mb-4">❌ 再想想看！</p>
           )}
 
-          {/* Success / submit button */}
           {result === 'correct' ? (
             <div className="flex flex-col items-center gap-2">
               <CheckCircle size={48} className="text-green-400" />
@@ -218,11 +273,7 @@ export default function QuestModal({ quest, onClose, onSubmit }: Props) {
                   : 'bg-brand-orange text-white shadow-orange-500/30'
               }`}
             >
-              {loading
-                ? '確認中...'
-                : isTask || isPhotoTask
-                ? '✅ 任務完成！'
-                : '送出答案 🚀'}
+              {loading ? '確認中...' : isTask || isPhotoTask ? '✅ 任務完成！' : '送出答案 🚀'}
             </motion.button>
           )}
         </motion.div>
