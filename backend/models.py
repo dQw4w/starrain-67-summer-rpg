@@ -20,6 +20,7 @@ class Quest(BaseModel):
     options: Optional[list[QuestOption]] = None
     completed: bool = False
     completed_at: Optional[str] = None
+    locked: bool = False          # easy mode: revealed only after the previous quest is done
 
 
 class Boss(BaseModel):

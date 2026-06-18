@@ -24,6 +24,10 @@ export default function BossCard({ boss, onQuestSubmit, onPhotoSubmit, onDefeat 
   const total = boss.quests.length
   const progress = total > 0 ? doneCount / total : 0
 
+  // Easy mode: quests are revealed one at a time. Hide locked ones; show a hint instead.
+  const visibleQuests = boss.quests.filter(q => !q.locked)
+  const lockedCount = total - visibleQuests.length
+
   return (
     <>
       <motion.div
@@ -80,9 +84,12 @@ export default function BossCard({ boss, onQuestSubmit, onPhotoSubmit, onDefeat 
         {/* Quest list */}
         {!boss.defeated && (
           <div className="space-y-2 mb-4">
-            {boss.quests.map(q => (
+            {visibleQuests.map(q => (
               <motion.button
                 key={q.id}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => !q.completed && setActiveQuest(q)}
                 className={`w-full flex items-center gap-3 py-3 px-4 rounded-2xl text-left transition-all ${
@@ -98,6 +105,16 @@ export default function BossCard({ boss, onQuestSubmit, onPhotoSubmit, onDefeat 
                 {!q.completed && <span className="text-white/40 text-sm">點擊開始</span>}
               </motion.button>
             ))}
+
+            {lockedCount > 0 && (
+              <div className="flex items-center gap-3 py-3 px-4 rounded-2xl bg-white/5 border border-dashed border-white/15 text-white/40">
+                <span className="text-2xl">🔒</span>
+                <span className="font-bold flex-1 text-sm">
+                  完成上面的任務後，下一個就會出現！
+                </span>
+                <span className="text-white/30 text-sm">還有 {lockedCount} 個</span>
+              </div>
+            )}
           </div>
         )}
 

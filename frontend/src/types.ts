@@ -16,6 +16,7 @@ export interface Quest {
   options: QuestOption[] | null
   completed: boolean
   completed_at: string | null
+  locked?: boolean   // easy mode: hidden until the previous quest is done
 }
 
 export interface Boss {

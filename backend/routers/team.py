@@ -3,7 +3,10 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from db import get_client
 from models import TeamState, Boss, Quest, QuestOption, DifficultyUpdate, QuestCompleteRequest
-from content import BOSSES, QUESTS, BOSS_QUESTS, TEAMS, QuestDef, Diff
+from content import (
+    BOSSES, QUESTS, BOSS_QUESTS, TEAMS, QuestDef, Diff,
+    EASY_QUESTS, EASY_BOSS_QUESTS, EasyQuest, quest_type,
+)
 from storage import BUCKET, ALLOWED_EXT
 
 router = APIRouter(prefix="/api/team", tags=["team"])
@@ -20,6 +23,29 @@ def _resolve_quest(q: QuestDef, diff: Diff, progress_map: dict) -> Quest:
     )
 
 
+def _resolve_easy_quest(eq: EasyQuest, progress_map: dict, locked: bool) -> Quest:
+    prog = progress_map.get(eq.id, {})
+    return Quest(
+        id=eq.id, boss_id=eq.boss_id, name=eq.name, emoji=eq.emoji, type='photo_task',
+        description=eq.description, options=[QuestOption(count=1)],
+        completed=prog.get("completed", False),
+        completed_at=prog.get("completed_at"),
+        locked=locked,
+    )
+
+
+def _easy_boss_quests(boss_id: int, progress_map: dict) -> list[Quest]:
+    """Sequential photo tasks: each one stays locked until the previous is done."""
+    quests: list[Quest] = []
+    prev_done = True
+    for eq in sorted(EASY_BOSS_QUESTS[boss_id], key=lambda q: q.order_index):
+        done = progress_map.get(eq.id, {}).get("completed", False)
+        # locked only if a prior quest is unfinished AND this one isn't already done
+        quests.append(_resolve_easy_quest(eq, progress_map, locked=(not prev_done) and not done))
+        prev_done = prev_done and done
+    return quests
+
+
 def _build_team_state(
     team_id: int,
     difficulty: str,
@@ -28,13 +54,17 @@ def _build_team_state(
 ) -> TeamState:
     progress_map: dict[int, dict] = {r["quest_id"]: r for r in quest_progress}
     defeat_map:   dict[int, dict] = {r["boss_id"]:  r for r in boss_defeats}
+    is_easy = difficulty == "easy"
 
     boss_list: list[Boss] = []
     for boss_def in sorted(BOSSES.values(), key=lambda b: b.order_index):
-        quests = [
-            _resolve_quest(q, getattr(q, difficulty), progress_map)
-            for q in sorted(BOSS_QUESTS[boss_def.id], key=lambda q: q.order_index)
-        ]
+        if is_easy:
+            quests = _easy_boss_quests(boss_def.id, progress_map)
+        else:
+            quests = [
+                _resolve_quest(q, getattr(q, difficulty), progress_map)
+                for q in sorted(BOSS_QUESTS[boss_def.id], key=lambda q: q.order_index)
+            ]
         all_done = bool(quests) and all(q.completed for q in quests)
         defeat = defeat_map.get(boss_def.id, {})
         boss_list.append(Boss(
@@ -131,10 +161,10 @@ async def upload_quest_photos(
     """Upload photo-task images to Supabase Storage, then mark the quest done."""
     if team_id not in TEAMS:
         raise HTTPException(404, "Team not found")
-    quest_def = QUESTS.get(quest_id)
-    if not quest_def:
+    qtype = quest_type(quest_id)
+    if qtype is None:
         raise HTTPException(404, "Quest not found")
-    if quest_def.type != "photo_task":
+    if qtype != "photo_task":
         raise HTTPException(400, "This quest does not accept photos")
     if not files:
         raise HTTPException(400, "No files uploaded")
@@ -175,7 +205,12 @@ def defeat_boss(team_id: int, boss_id: int):
     if team_id not in TEAMS:
         raise HTTPException(404, "Team not found")
     db = get_client()
-    quest_ids = [q.id for q in BOSS_QUESTS.get(boss_id, [])]
+    team_res   = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
+    difficulty = team_res.data["difficulty"] if team_res.data else "normal"
+    if difficulty == "easy":
+        quest_ids = [q.id for q in EASY_BOSS_QUESTS.get(boss_id, [])]
+    else:
+        quest_ids = [q.id for q in BOSS_QUESTS.get(boss_id, [])]
     if quest_ids:
         progress_res = (
             db.table("team_quest_progress")

@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from db import get_client
 from models import AdminTeamUpdate, AdminQuestOverride, AdminBossOverride
 from routers.team import _fetch_state
-from content import BOSSES, QUESTS, TEAMS
+from content import BOSSES, QUESTS, TEAMS, quest_name
 from storage import BUCKET, media_type_for
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -116,12 +116,11 @@ def _list_team_files(team_id: int) -> list[dict]:
 def list_team_photos(team_id: int):
     if team_id not in TEAMS:
         raise HTTPException(404, "Team not found")
-    quest_names = {q.id: q.name for q in QUESTS.values()}
     return [
         {
             "name": f["name"],
             "quest_id": f["quest_id"],
-            "quest_name": quest_names.get(f["quest_id"]),
+            "quest_name": quest_name(f["quest_id"]) if f["quest_id"] else None,
             "url": f"/api/admin/teams/{team_id}/photo/{f['name']}",
         }
         for f in _list_team_files(team_id)

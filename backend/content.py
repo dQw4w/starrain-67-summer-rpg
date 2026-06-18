@@ -64,10 +64,14 @@ QUESTS: dict[int, QuestDef] = {
 
     # ── Boss 1: 米怪（動物園）───────────────────────────────────────────────
 
+    # NOTE: easy mode no longer uses these QUESTS at all (see EASY_QUESTS below).
+    # Per design, the 大鴕鳥 question is shifted down one level:
+    #   normal difficulty shows the (old) easy version,
+    #   hard   difficulty shows the (old) normal version.
     1: QuestDef(
         id=1, boss_id=1, name='神秘大鳥知識王', emoji='🔍',
-        type='fill_in', order_index=1,
-        easy=Diff(
+        type='multiple_choice', order_index=1,
+        easy=Diff(  # unused (easy mode is redesigned) — kept only to satisfy the schema
             description='大鴕鳥的速度最快可達多少？',
             options=[
                 {"text": "30 km/h", "correct": False},
@@ -76,7 +80,16 @@ QUESTS: dict[int, QuestDef] = {
                 {"text": "120 km/h", "correct": False},
             ],
         ),
-        normal=Diff(
+        normal=Diff(  # ← previously the easy version
+            description='大鴕鳥的速度最快可達多少？',
+            options=[
+                {"text": "30 km/h", "correct": False},
+                {"text": "60 km/h", "correct": True},
+                {"text": "90 km/h", "correct": False},
+                {"text": "120 km/h", "correct": False},
+            ],
+        ),
+        hard=Diff(  # ← previously the normal version
             description='下列何者不是大鴕鳥的特徵？',
             options=[
                 {"text": "體重可達150公斤", "correct": False},
@@ -84,10 +97,6 @@ QUESTS: dict[int, QuestDef] = {
                 {"text": "雄性羽毛為黑色或白色", "correct": False},
                 {"text": "具有2根腳趾", "correct": False},
             ],
-        ),
-        hard=Diff(
-            description='有一種動物，是世界上體型最大的鳥，而且能跑得很快，該動物的名稱是？（請輸入答案）',
-            options=[{"text": "大鴕鳥"}],
         ),
     ),
 
@@ -224,3 +233,55 @@ QUESTS: dict[int, QuestDef] = {
 BOSS_QUESTS: dict[int, list[QuestDef]] = {bid: [] for bid in BOSSES}
 for _q in QUESTS.values():
     BOSS_QUESTS[_q.boss_id].append(_q)
+
+
+# ── Easy mode (completely separate) ──────────────────────────────────────────
+# Easy mode replaces all of the above with a sequence of "visit this animal and
+# take a group photo" tasks. They must be completed in order: a task stays locked
+# until the previous one in the same boss is done. The 5 animals (all drawn from
+# the regular questions) are split across the two existing bosses.
+
+@dataclass
+class EasyQuest:
+    id: int
+    boss_id: int
+    name: str          # the animal's name (shown as the quest title)
+    emoji: str
+    description: str
+    order_index: int
+
+
+def _photo_desc(animal: str) -> str:
+    return f'找到【{animal}】，全隊一起在牠前面拍一張開心的合照並上傳！📸'
+
+
+EASY_QUESTS: dict[int, EasyQuest] = {
+    # Boss 1（米怪・動物園）
+    101: EasyQuest(101, 1, '台灣梅花鹿',     '🦌', _photo_desc('台灣梅花鹿'),     1),
+    102: EasyQuest(102, 1, '婆羅洲紅毛猩猩', '🦧', _photo_desc('婆羅洲紅毛猩猩'), 2),
+    103: EasyQuest(103, 1, '蘇卡達象龜',     '🐢', _photo_desc('蘇卡達象龜'),     3),
+    # Boss 2（粉怪）
+    104: EasyQuest(104, 2, '河馬',           '🦛', _photo_desc('河馬'),           1),
+    105: EasyQuest(105, 2, '大鴕鳥',         '🦤', _photo_desc('大鴕鳥'),         2),
+}
+
+EASY_BOSS_QUESTS: dict[int, list[EasyQuest]] = {bid: [] for bid in BOSSES}
+for _eq in EASY_QUESTS.values():
+    EASY_BOSS_QUESTS[_eq.boss_id].append(_eq)
+
+
+def quest_type(quest_id: int) -> Optional[str]:
+    """Resolve a quest's type across both the regular and easy-mode sets."""
+    if quest_id in QUESTS:
+        return QUESTS[quest_id].type
+    if quest_id in EASY_QUESTS:
+        return 'photo_task'
+    return None
+
+
+def quest_name(quest_id: int) -> Optional[str]:
+    if quest_id in QUESTS:
+        return QUESTS[quest_id].name
+    if quest_id in EASY_QUESTS:
+        return EASY_QUESTS[quest_id].name
+    return None
