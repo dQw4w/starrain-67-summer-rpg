@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from db import get_client
-from models import AdminTeamUpdate, AdminQuestOverride, AdminBossOverride
+from models import AdminTeamUpdate, AdminQuestOverride, AdminBossOverride, PhotoDeleteRequest
 from routers.team import _fetch_state
 from content import BOSSES, QUESTS, TEAMS, quest_name
 from storage import BUCKET, media_type_for
@@ -165,6 +165,50 @@ def download_team_photos_zip(team_id: int):
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="team-{team_id}-photos.zip"'},
     )
+
+
+@router.delete("/teams/{team_id}/photos")
+def delete_team_photos(team_id: int):
+    """Delete every photo for one team."""
+    if team_id not in TEAMS:
+        raise HTTPException(404, "Team not found")
+    files = _list_team_files(team_id)
+    if not files:
+        return {"ok": True, "deleted": 0}
+    paths = [f"team-{team_id}/{f['name']}" for f in files]
+    get_client().storage.from_(BUCKET).remove(paths)
+    return {"ok": True, "deleted": len(paths)}
+
+
+@router.post("/teams/{team_id}/photos/delete")
+def delete_selected_photos(team_id: int, body: PhotoDeleteRequest):
+    """Delete specific photos (by file name) for one team."""
+    if team_id not in TEAMS:
+        raise HTTPException(404, "Team not found")
+    names = [_safe_name(n) for n in body.names]
+    if not names:
+        raise HTTPException(400, "No photos selected")
+    paths = [f"team-{team_id}/{n}" for n in names]
+    get_client().storage.from_(BUCKET).remove(paths)
+    return {"ok": True, "deleted": len(paths)}
+
+
+@router.delete("/photos")
+def delete_all_photos():
+    """Delete every photo from every team."""
+    store = get_client().storage.from_(BUCKET)
+    removed = 0
+    for team_id in TEAMS:
+        files = _list_team_files(team_id)
+        if not files:
+            continue
+        paths = [f"team-{team_id}/{f['name']}" for f in files]
+        try:
+            store.remove(paths)
+            removed += len(paths)
+        except Exception:
+            pass
+    return {"ok": True, "deleted": removed}
 
 
 @router.get("/photos.zip")

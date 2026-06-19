@@ -66,3 +66,7 @@ class AdminQuestOverride(BaseModel):
 
 class AdminBossOverride(BaseModel):
     defeated: bool
+
+
+class PhotoDeleteRequest(BaseModel):
+    names: list[str]            # file names within a team's folder

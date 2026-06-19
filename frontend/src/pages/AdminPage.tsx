@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, RotateCcw, ExternalLink, CheckCircle, Circle, Shield, Eye, EyeOff, QrCode, Images, Download, ImageOff, X } from 'lucide-react'
+import { RefreshCw, RotateCcw, ExternalLink, CheckCircle, Circle, Shield, Eye, EyeOff, QrCode, Images, Download, ImageOff, X, Trash2, Check } from 'lucide-react'
 import type { TeamState, Boss } from '../types'
 import { api } from '../api'
 
@@ -73,10 +73,46 @@ type PhotoItem = { name: string; quest_id: number | null; quest_name: string | n
 function PhotosModal({ teamId, teamName, onClose }: { teamId: number; teamName: string; onClose: () => void }) {
   const [photos, setPhotos] = useState<PhotoItem[] | null>(null)
   const [error, setError] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [busy, setBusy] = useState(false)
+  const [confirm, setConfirm] = useState<null | 'team' | 'selected'>(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setError(false)
+    setPhotos(null)
+    setSelected(new Set())
+    setConfirm(null)
     api.adminTeamPhotos(teamId).then(setPhotos).catch(() => setError(true))
   }, [teamId])
+
+  useEffect(() => { load() }, [load])
+
+  const toggle = (name: string) =>
+    setSelected(prev => {
+      const n = new Set(prev)
+      if (n.has(name)) n.delete(name); else n.add(name)
+      return n
+    })
+
+  const allSelected = !!photos && photos.length > 0 && selected.size === photos.length
+  const toggleAll = () =>
+    setSelected(allSelected || !photos ? new Set() : new Set(photos.map(p => p.name)))
+
+  const deleteSelected = async () => {
+    setBusy(true)
+    try {
+      await api.adminDeleteSelectedPhotos(teamId, [...selected])
+      load()
+    } finally { setBusy(false) }
+  }
+
+  const deleteTeam = async () => {
+    setBusy(true)
+    try {
+      await api.adminDeleteTeamPhotos(teamId)
+      load()
+    } finally { setBusy(false) }
+  }
 
   return (
     <motion.div
@@ -111,6 +147,51 @@ function PhotosModal({ teamId, teamName, onClose }: { teamId: number; teamName: 
           </div>
         </div>
 
+        {/* Selection / delete toolbar */}
+        {photos && photos.length > 0 && (
+          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-white/10 shrink-0 text-sm">
+            <button onClick={toggleAll} className="text-white/50 hover:text-white font-bold">
+              {allSelected ? '取消全選' : '全選'}
+            </button>
+            {selected.size > 0 && <span className="text-white/40">已選 {selected.size} 張</span>}
+
+            <div className="ml-auto flex items-center gap-2">
+              {confirm ? (
+                <>
+                  <span className="text-red-300 text-xs">
+                    確定刪除{confirm === 'team' ? '全部' : `這 ${selected.size} 張`}？
+                  </span>
+                  <button
+                    disabled={busy}
+                    onClick={confirm === 'team' ? deleteTeam : deleteSelected}
+                    className="bg-red-600 hover:bg-red-500 text-white font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
+                  >
+                    {busy ? '刪除中…' : '確認'}
+                  </button>
+                  <button onClick={() => setConfirm(null)} className="text-white/50 px-2 py-1.5">取消</button>
+                </>
+              ) : (
+                <>
+                  {selected.size > 0 && (
+                    <button
+                      onClick={() => setConfirm('selected')}
+                      className="flex items-center gap-1.5 bg-red-900/50 hover:bg-red-900/70 text-red-300 font-bold px-3 py-1.5 rounded-lg"
+                    >
+                      <Trash2 size={14} /> 刪除選取
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setConfirm('team')}
+                    className="flex items-center gap-1.5 text-white/40 hover:text-red-300 px-2 py-1.5"
+                  >
+                    <Trash2 size={14} /> 清空此隊
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="overflow-y-auto p-5">
           {error ? (
             <p className="text-red-400 text-center py-12">載入失敗，請重試</p>
@@ -123,21 +204,38 @@ function PhotosModal({ teamId, teamName, onClose }: { teamId: number; teamName: 
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {photos.map(p => (
-                <div key={p.name} className="bg-white/5 rounded-2xl overflow-hidden border border-white/10">
-                  <a href={p.url} target="_blank" rel="noreferrer" className="block aspect-square bg-black/40">
-                    <img src={p.url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
-                  </a>
-                  <div className="flex items-center justify-between gap-1 px-2.5 py-2">
-                    <span className="text-white/50 text-xs truncate">
-                      {p.quest_name ?? (p.quest_id ? `任務 ${p.quest_id}` : '照片')}
-                    </span>
-                    <a href={`${p.url}?dl=1`} className="text-purple-400 hover:text-purple-300 shrink-0" title="下載這張">
-                      <Download size={15} />
+              {photos.map(p => {
+                const isSel = selected.has(p.name)
+                return (
+                  <div
+                    key={p.name}
+                    className={`relative bg-white/5 rounded-2xl overflow-hidden border transition-all ${
+                      isSel ? 'border-purple-400 ring-2 ring-purple-400/50' : 'border-white/10'
+                    }`}
+                  >
+                    <button
+                      onClick={() => toggle(p.name)}
+                      className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-md flex items-center justify-center border-2 transition-colors ${
+                        isSel ? 'bg-purple-500 border-purple-400 text-white' : 'bg-black/50 border-white/50 text-transparent'
+                      }`}
+                      title="選取"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <a href={p.url} target="_blank" rel="noreferrer" className="block aspect-square bg-black/40">
+                      <img src={p.url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
                     </a>
+                    <div className="flex items-center justify-between gap-1 px-2.5 py-2">
+                      <span className="text-white/50 text-xs truncate">
+                        {p.quest_name ?? (p.quest_id ? `任務 ${p.quest_id}` : '照片')}
+                      </span>
+                      <a href={`${p.url}?dl=1`} className="text-purple-400 hover:text-purple-300 shrink-0" title="下載這張">
+                        <Download size={15} />
+                      </a>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -329,6 +427,18 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [confirmResetAll, setConfirmResetAll] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [confirmDelPhotos, setConfirmDelPhotos] = useState(false)
+  const [delPhotosBusy, setDelPhotosBusy] = useState(false)
+
+  const handleDeleteAllPhotos = async () => {
+    setDelPhotosBusy(true)
+    try {
+      await api.adminDeleteAllPhotos()
+    } finally {
+      setDelPhotosBusy(false)
+      setConfirmDelPhotos(false)
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -452,6 +562,29 @@ export default function AdminPage() {
         >
           <Download size={16} /> 下載全部照片
         </a>
+
+        {confirmDelPhotos ? (
+          <div className="col-span-2 flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-900/30 border border-red-700/40">
+            <span className="text-red-300 text-sm font-bold">確定刪除所有隊伍的照片？無法復原</span>
+            <button
+              onClick={handleDeleteAllPhotos}
+              disabled={delPhotosBusy}
+              className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
+            >
+              {delPhotosBusy ? '刪除中…' : '確認刪除'}
+            </button>
+            <button onClick={() => setConfirmDelPhotos(false)} className="text-white/50 text-sm px-2 py-1.5">
+              取消
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmDelPhotos(true)}
+            className="col-span-2 flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-red-300 hover:border-red-700/40 transition-colors font-bold text-sm"
+          >
+            <Trash2 size={16} /> 刪除全部照片
+          </button>
+        )}
       </div>
 
       {/* Team overview strip */}

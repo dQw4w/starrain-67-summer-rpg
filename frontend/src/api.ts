@@ -62,4 +62,14 @@ export const api = {
     ),
   adminTeamPhotosZipUrl: (teamId: number) => `${BASE}/admin/teams/${teamId}/photos.zip`,
   adminAllPhotosZipUrl: () => `${BASE}/admin/photos.zip`,
+
+  adminDeleteTeamPhotos: (teamId: number) =>
+    req<{ ok: boolean; deleted: number }>(`/admin/teams/${teamId}/photos`, { method: 'DELETE' }),
+  adminDeleteSelectedPhotos: (teamId: number, names: string[]) =>
+    req<{ ok: boolean; deleted: number }>(`/admin/teams/${teamId}/photos/delete`, {
+      method: 'POST',
+      body: JSON.stringify({ names }),
+    }),
+  adminDeleteAllPhotos: () =>
+    req<{ ok: boolean; deleted: number }>('/admin/photos', { method: 'DELETE' }),
 }
