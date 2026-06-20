@@ -72,7 +72,7 @@ QUESTS: dict[int, QuestDef] = {
         id=1, boss_id=1, name='神秘大鳥知識王', emoji='🔍',
         type='multiple_choice', order_index=1,
         easy=Diff(  # unused (easy mode is redesigned) — kept only to satisfy the schema
-            description='大鴕鳥的速度最快可達多少？',
+            description='鴕鳥的速度最快可達多少？',
             options=[
                 {"text": "30 km/h", "correct": False},
                 {"text": "60 km/h", "correct": True},
@@ -81,7 +81,7 @@ QUESTS: dict[int, QuestDef] = {
             ],
         ),
         normal=Diff(  # ← previously the easy version
-            description='大鴕鳥的速度最快可達多少？',
+            description='鴕鳥的速度最快可達多少？',
             options=[
                 {"text": "30 km/h", "correct": False},
                 {"text": "60 km/h", "correct": True},
@@ -90,7 +90,7 @@ QUESTS: dict[int, QuestDef] = {
             ],
         ),
         hard=Diff(  # ← previously the normal version
-            description='下列何者不是大鴕鳥的特徵？',
+            description='下列何者不是鴕鳥的特徵？',
             options=[
                 {"text": "體重可達150公斤", "correct": False},
                 {"text": "最快跑步速度為30 km/h", "correct": True},
@@ -120,19 +120,17 @@ QUESTS: dict[int, QuestDef] = {
     7: QuestDef(
         id=7, boss_id=1, name='動物保育知多少', emoji='🌿',
         type='drag_match', order_index=3,
-        # easy: 2 pairs (最極端的兩個)
         easy=Diff(
             description='連線配對：把每隻動物和牠的保育等級連起來！',
             options=[
-                {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
-                {"animal": "台灣梅花鹿",     "level": "無危 LC"},
+                {"animal": "台灣梅花鹿", "level": "無危 LC"},
             ],
         ),
         # normal: 3 pairs
         normal=Diff(
             description='連線配對：把每隻動物和牠的保育等級連起來！',
             options=[
-                {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
+                # {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
                 {"animal": "蘇卡達象龜",     "level": "瀕危 EN"},
                 {"animal": "台灣梅花鹿",     "level": "無危 LC"},
             ],
@@ -141,7 +139,7 @@ QUESTS: dict[int, QuestDef] = {
         hard=Diff(
             description='連線配對：把每隻動物和牠的保育等級連起來！',
             options=[
-                {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
+                # {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
                 {"animal": "蘇卡達象龜",     "level": "瀕危 EN"},
                 {"animal": "河馬",           "level": "易危 VU"},
                 {"animal": "台灣梅花鹿",     "level": "無危 LC"},

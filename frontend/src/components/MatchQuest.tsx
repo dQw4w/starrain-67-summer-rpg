@@ -31,7 +31,7 @@ export default function MatchQuest({ options, onChange }: Props) {
   const [shuffledAnimals] = useState(() =>
     [...options.map(o => o.animal!)].sort(() => Math.random() - 0.5)
   )
-  const levels = LEVEL_ORDER.filter(l => options.some(o => o.level === l))
+  const levels = LEVEL_ORDER
 
   useEffect(() => { setTick(t => t + 1) }, [])
 
