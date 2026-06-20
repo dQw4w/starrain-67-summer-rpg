@@ -172,9 +172,16 @@ export default function QuestModal({ quest, onClose, onSubmit, onSubmitPhotos }:
 
           <div className="text-4xl text-center mb-2">{quest.emoji}</div>
           <h2 className="text-xl font-black text-center text-white mb-4">{quest.name}</h2>
-          <p className="text-white/90 text-center text-base leading-relaxed mb-6">
+          <p className="text-white/90 text-center text-base leading-relaxed mb-4">
             {quest.description}
           </p>
+
+          {/* Quest illustration (multiple_choice / fill_in) */}
+          {!isPhotoTask && !isDragMatch && quest.image && (
+            <div className="mb-4 rounded-2xl overflow-hidden border border-white/15 bg-black/30">
+              <img src={quest.image} alt="" className="w-full max-h-52 object-contain" />
+            </div>
+          )}
 
           {/* Multiple choice */}
           {isMultiChoice && quest.options && (

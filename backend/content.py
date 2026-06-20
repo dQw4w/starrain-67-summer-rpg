@@ -21,6 +21,7 @@ class QuestDef:
     easy: Diff
     normal: Diff
     hard: Diff
+    image: Optional[str] = None  # illustration shown in the quest modal
 
 
 @dataclass
@@ -70,7 +71,7 @@ QUESTS: dict[int, QuestDef] = {
     #   hard   difficulty shows the (old) normal version.
     1: QuestDef(
         id=1, boss_id=1, name='神秘大鳥知識王', emoji='🔍',
-        type='multiple_choice', order_index=1,
+        type='multiple_choice', order_index=1, image='/ostrich.png',
         easy=Diff(  # unused (easy mode is redesigned) — kept only to satisfy the schema
             description='鴕鳥的速度最快可達多少？',
             options=[

@@ -8,6 +8,12 @@ interface Props {
 
 const LEVEL_ORDER = ['極危 CR', '瀕危 EN', '易危 VU', '無危 LC']
 
+const ANIMAL_IMAGE: Record<string, string> = {
+  '台灣梅花鹿': '/deer.png',
+  '蘇卡達象龜': '/turtle.png',
+  '河馬':       '/hippo.png',
+}
+
 const LC: Record<string, { bg: string; border: string; text: string; hex: string }> = {
   '極危 CR': { bg: 'bg-red-900/50',    border: 'border-red-500',    text: 'text-red-200',    hex: '#ef4444' },
   '瀕危 EN': { bg: 'bg-orange-900/50', border: 'border-orange-500', text: 'text-orange-200', hex: '#f97316' },
@@ -153,7 +159,7 @@ export default function MatchQuest({ options, onChange }: Props) {
                   if (l) { const n = { ...connections }; delete n[l]; setConn(n) }
                 }}
                 className={[
-                  'h-16 px-4 flex items-center rounded-xl border-2 font-bold text-2xl',
+                  'h-24 px-2 py-1.5 flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 relative',
                   'cursor-grab active:cursor-grabbing transition-all',
                   active
                     ? 'border-white/80 bg-white/25 text-white scale-105 shadow-xl shadow-white/10'
@@ -162,8 +168,16 @@ export default function MatchQuest({ options, onChange }: Props) {
                       : 'bg-white/10 border-white/25 text-white hover:border-white/40',
                 ].join(' ')}
               >
-                <span className="truncate">{animal}</span>
-                {lvl && !active && <span className="ml-auto text-sm opacity-40 shrink-0 pl-2">✓</span>}
+                {ANIMAL_IMAGE[animal] && (
+                  <img
+                    src={ANIMAL_IMAGE[animal]}
+                    alt={animal}
+                    draggable={false}
+                    className="h-12 w-full object-contain pointer-events-none"
+                  />
+                )}
+                <span className="text-sm font-bold text-center leading-tight">{animal}</span>
+                {lvl && !active && <span className="absolute top-1 right-1.5 text-xs opacity-40">✓</span>}
               </div>
             )
           })}

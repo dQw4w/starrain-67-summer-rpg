@@ -20,6 +20,7 @@ def _resolve_quest(q: QuestDef, diff: Diff, progress_map: dict) -> Quest:
         description=diff.description, options=options,
         completed=prog.get("completed", False),
         completed_at=prog.get("completed_at"),
+        image=q.image,
     )
 
 
