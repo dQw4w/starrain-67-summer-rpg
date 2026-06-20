@@ -149,83 +149,8 @@ QUESTS: dict[int, QuestDef] = {
         ),
     ),
 
-    # ── Boss 2: 粉怪（玻璃博物館 + 孔廟）───────────────────────────────────
-
-    3: QuestDef(
-        id=3, boss_id=2, name='玻璃小達人', emoji='✨',
-        type='multiple_choice', order_index=1,
-        easy=Diff(
-            description='玻璃是透明的，這是真的嗎？',
-            options=[
-                {"text": "是真的！", "correct": True},
-                {"text": "玻璃是不透明的", "correct": False},
-            ],
-        ),
-        normal=Diff(
-            description='玻璃主要是用什麼原料製作的？',
-            options=[
-                {"text": "沙子", "correct": True},
-                {"text": "石頭", "correct": False},
-                {"text": "水", "correct": False},
-                {"text": "木頭", "correct": False},
-            ],
-        ),
-        hard=Diff(
-            description='在博物館中找到3種不同種類的玻璃工藝品，分別描述它們的製作技法或特色。',
-        ),
-    ),
-
-    4: QuestDef(
-        id=4, boss_id=2, name='創意設計師', emoji='🎨',
-        type='task', order_index=2,
-        easy=Diff(
-            description='在博物館中找到你覺得最漂亮的玻璃作品，告訴大家你喜歡它哪裡。',
-        ),
-        normal=Diff(
-            description='用紙筆畫下（或口頭描述）你最喜歡的一件玻璃藝品，說明它的形狀和顏色。',
-        ),
-        hard=Diff(
-            description='設計一個你自己的玻璃藝品：說明它的形狀、顏色、用途，以及為什麼你想做這個。',
-        ),
-    ),
-
-    5: QuestDef(
-        id=5, boss_id=2, name='孔廟小學者', emoji='📚',
-        type='multiple_choice', order_index=3,
-        easy=Diff(
-            description='孔子是一位很有名的老師，這是真的嗎？',
-            options=[
-                {"text": "是真的！", "correct": True},
-                {"text": "他是一位廚師", "correct": False},
-            ],
-        ),
-        normal=Diff(
-            description='孔子教我們要用什麼態度對待長輩？',
-            options=[
-                {"text": "尊敬", "correct": True},
-                {"text": "忽視", "correct": False},
-                {"text": "嘲笑", "correct": False},
-                {"text": "命令", "correct": False},
-            ],
-        ),
-        hard=Diff(
-            description='孔廟裡有哪些主要建築？找到至少3棟並說明每棟的名稱和功能。',
-        ),
-    ),
-
-    6: QuestDef(
-        id=6, boss_id=2, name='孔廟探險家', emoji='🗺️',
-        type='task', order_index=4,
-        easy=Diff(
-            description='在孔廟找到「大成殿」的牌匾，告訴隊長你找到了。',
-        ),
-        normal=Diff(
-            description='找到孔廟裡的石碑，念出上面你看得懂的一個字，並說說它是什麼意思。',
-        ),
-        hard=Diff(
-            description='找到孔廟的5種不同裝飾元素（龍、鳳、花紋等），說明每個裝飾出現在哪裡、代表什麼意義。',
-        ),
-    ),
+    # Boss 2（粉怪・玻工館）has no QuestDef entries — for every difficulty it uses
+    # the glass-exhibit photo sequence defined in BOSS2_GLASS below.
 }
 
 # ── Derived index: boss_id → list of quests ──────────────────────────────────
@@ -235,46 +160,56 @@ for _q in QUESTS.values():
     BOSS_QUESTS[_q.boss_id].append(_q)
 
 
-# ── Easy mode (completely separate) ──────────────────────────────────────────
-# Easy mode replaces all of the above with a sequence of "visit this animal and
-# take a group photo" tasks. They must be completed in order: a task stays locked
-# until the previous one in the same boss is done. The 5 animals (all drawn from
-# the regular questions) are split across the two existing bosses.
+# ── Sequential photo-task quests ─────────────────────────────────────────────
+# A "find it and take a group photo" task. They are completed in order: each one
+# stays locked until the previous in the same boss is done. Two uses:
+#   • Boss 1 easy mode  → visit 3 animals (no reference image)
+#   • Boss 2 every mode → find 3 glass exhibits (with a reference photo to match)
 
 @dataclass
-class EasyQuest:
+class PhotoQuest:
     id: int
     boss_id: int
-    name: str          # the animal's name (shown as the quest title)
+    name: str
     emoji: str
     description: str
     order_index: int
+    image: Optional[str] = None   # reference image URL shown to the team (served from /public)
 
 
-def _photo_desc(animal: str) -> str:
-    return f'找到【{animal}】，全隊一起在牠前面拍一張開心的合照並上傳！📸'
+# Boss 1（米怪・動物園）— easy mode only: 3 animals drawn from the regular questions
+BOSS1_EASY_ANIMALS: list[PhotoQuest] = [
+    PhotoQuest(101, 1, '台灣梅花鹿',     '🦌', '找到【台灣梅花鹿】，全隊一起在牠前面拍一張開心的合照並上傳！📸', 1),
+    PhotoQuest(102, 1, '婆羅洲紅毛猩猩', '🦧', '找到【婆羅洲紅毛猩猩】，全隊一起在牠前面拍一張合照並上傳！📸', 2),
+    PhotoQuest(103, 1, '蘇卡達象龜',     '🐢', '找到【蘇卡達象龜】，全隊一起在牠前面拍一張合照並上傳！📸', 3),
+]
 
+# Boss 2（粉怪・玻工館）— every difficulty: find 3 glass exhibits matching the photos
+BOSS2_GLASS: list[PhotoQuest] = [
+    PhotoQuest(201, 2, '玻璃展品 ①', '🔍', '找到照片中的這件玻璃展品，全隊一起在它前面拍一張合照並上傳！📸', 1, image='/glass-1.jpg'),
+    PhotoQuest(202, 2, '玻璃展品 ②', '🔎', '找到照片中的這件玻璃展品，全隊一起在它前面拍一張合照並上傳！📸', 2, image='/glass-2.jpg'),
+    PhotoQuest(203, 2, '玻璃展品 ③', '✨', '找到照片中的這件玻璃展品，全隊一起在它前面拍一張合照並上傳！📸', 3, image='/glass-3.jpg'),
+]
 
-EASY_QUESTS: dict[int, EasyQuest] = {
-    # Boss 1（米怪・動物園）
-    101: EasyQuest(101, 1, '台灣梅花鹿',     '🦌', _photo_desc('台灣梅花鹿'),     1),
-    102: EasyQuest(102, 1, '婆羅洲紅毛猩猩', '🦧', _photo_desc('婆羅洲紅毛猩猩'), 2),
-    103: EasyQuest(103, 1, '蘇卡達象龜',     '🐢', _photo_desc('蘇卡達象龜'),     3),
-    # Boss 2（粉怪）
-    104: EasyQuest(104, 2, '河馬',           '🦛', _photo_desc('河馬'),           1),
-    105: EasyQuest(105, 2, '大鴕鳥',         '🦤', _photo_desc('大鴕鳥'),         2),
+PHOTO_QUESTS: dict[int, PhotoQuest] = {
+    q.id: q for q in (*BOSS1_EASY_ANIMALS, *BOSS2_GLASS)
 }
 
-EASY_BOSS_QUESTS: dict[int, list[EasyQuest]] = {bid: [] for bid in BOSSES}
-for _eq in EASY_QUESTS.values():
-    EASY_BOSS_QUESTS[_eq.boss_id].append(_eq)
+
+def boss_photo_sequence(boss_id: int, difficulty: str) -> Optional[list[PhotoQuest]]:
+    """The photo-task sequence for a boss, or None to use the regular QUESTS."""
+    if boss_id == 2:
+        return BOSS2_GLASS                       # all difficulties
+    if boss_id == 1 and difficulty == "easy":
+        return BOSS1_EASY_ANIMALS
+    return None
 
 
 def quest_type(quest_id: int) -> Optional[str]:
-    """Resolve a quest's type across both the regular and easy-mode sets."""
+    """Resolve a quest's type across the regular and photo-task sets."""
     if quest_id in QUESTS:
         return QUESTS[quest_id].type
-    if quest_id in EASY_QUESTS:
+    if quest_id in PHOTO_QUESTS:
         return 'photo_task'
     return None
 
@@ -282,6 +217,6 @@ def quest_type(quest_id: int) -> Optional[str]:
 def quest_name(quest_id: int) -> Optional[str]:
     if quest_id in QUESTS:
         return QUESTS[quest_id].name
-    if quest_id in EASY_QUESTS:
-        return EASY_QUESTS[quest_id].name
+    if quest_id in PHOTO_QUESTS:
+        return PHOTO_QUESTS[quest_id].name
     return None

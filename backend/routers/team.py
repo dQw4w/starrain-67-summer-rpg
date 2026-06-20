@@ -5,7 +5,7 @@ from db import get_client
 from models import TeamState, Boss, Quest, QuestOption, DifficultyUpdate, QuestCompleteRequest
 from content import (
     BOSSES, QUESTS, BOSS_QUESTS, TEAMS, QuestDef, Diff,
-    EASY_QUESTS, EASY_BOSS_QUESTS, EasyQuest, quest_type,
+    PhotoQuest, boss_photo_sequence, quest_type,
 )
 from storage import BUCKET, ALLOWED_EXT
 
@@ -23,25 +23,25 @@ def _resolve_quest(q: QuestDef, diff: Diff, progress_map: dict) -> Quest:
     )
 
 
-def _resolve_easy_quest(eq: EasyQuest, progress_map: dict, locked: bool) -> Quest:
-    prog = progress_map.get(eq.id, {})
+def _resolve_photo_quest(pq: PhotoQuest, progress_map: dict, locked: bool) -> Quest:
+    prog = progress_map.get(pq.id, {})
     return Quest(
-        id=eq.id, boss_id=eq.boss_id, name=eq.name, emoji=eq.emoji, type='photo_task',
-        description=eq.description, options=[QuestOption(count=1)],
+        id=pq.id, boss_id=pq.boss_id, name=pq.name, emoji=pq.emoji, type='photo_task',
+        description=pq.description, options=[QuestOption(count=1)],
         completed=prog.get("completed", False),
         completed_at=prog.get("completed_at"),
-        locked=locked,
+        locked=locked, image=pq.image,
     )
 
 
-def _easy_boss_quests(boss_id: int, progress_map: dict) -> list[Quest]:
+def _resolve_photo_sequence(seq: list[PhotoQuest], progress_map: dict) -> list[Quest]:
     """Sequential photo tasks: each one stays locked until the previous is done."""
     quests: list[Quest] = []
     prev_done = True
-    for eq in sorted(EASY_BOSS_QUESTS[boss_id], key=lambda q: q.order_index):
-        done = progress_map.get(eq.id, {}).get("completed", False)
+    for pq in sorted(seq, key=lambda q: q.order_index):
+        done = progress_map.get(pq.id, {}).get("completed", False)
         # locked only if a prior quest is unfinished AND this one isn't already done
-        quests.append(_resolve_easy_quest(eq, progress_map, locked=(not prev_done) and not done))
+        quests.append(_resolve_photo_quest(pq, progress_map, locked=(not prev_done) and not done))
         prev_done = prev_done and done
     return quests
 
@@ -54,12 +54,12 @@ def _build_team_state(
 ) -> TeamState:
     progress_map: dict[int, dict] = {r["quest_id"]: r for r in quest_progress}
     defeat_map:   dict[int, dict] = {r["boss_id"]:  r for r in boss_defeats}
-    is_easy = difficulty == "easy"
 
     boss_list: list[Boss] = []
     for boss_def in sorted(BOSSES.values(), key=lambda b: b.order_index):
-        if is_easy:
-            quests = _easy_boss_quests(boss_def.id, progress_map)
+        seq = boss_photo_sequence(boss_def.id, difficulty)
+        if seq is not None:
+            quests = _resolve_photo_sequence(seq, progress_map)
         else:
             quests = [
                 _resolve_quest(q, getattr(q, difficulty), progress_map)
@@ -207,8 +207,9 @@ def defeat_boss(team_id: int, boss_id: int):
     db = get_client()
     team_res   = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
     difficulty = team_res.data["difficulty"] if team_res.data else "normal"
-    if difficulty == "easy":
-        quest_ids = [q.id for q in EASY_BOSS_QUESTS.get(boss_id, [])]
+    seq = boss_photo_sequence(boss_id, difficulty)
+    if seq is not None:
+        quest_ids = [q.id for q in seq]
     else:
         quest_ids = [q.id for q in BOSS_QUESTS.get(boss_id, [])]
     if quest_ids:

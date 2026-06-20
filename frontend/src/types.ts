@@ -16,7 +16,8 @@ export interface Quest {
   options: QuestOption[] | null
   completed: boolean
   completed_at: string | null
-  locked?: boolean   // easy mode: hidden until the previous quest is done
+  locked?: boolean   // hidden until the previous quest is done
+  image?: string | null   // reference image for photo tasks (the thing to find)
 }
 
 export interface Boss {

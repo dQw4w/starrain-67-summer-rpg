@@ -214,6 +214,12 @@ export default function QuestModal({ quest, onClose, onSubmit, onSubmitPhotos }:
           {/* Photo task */}
           {isPhotoTask && (
             <div className="mb-6 space-y-3">
+              {quest.image && (
+                <div className="rounded-2xl overflow-hidden border border-white/15 bg-black/30">
+                  <img src={quest.image} alt="要尋找的目標" className="w-full max-h-56 object-contain" />
+                  <p className="text-center text-white/60 text-xs py-1.5 bg-white/5">👆 找到照片中的這個目標</p>
+                </div>
+              )}
               <p className="text-white/50 text-sm text-center">
                 需要拍 {photoCount} 張照片（{photos.filter(Boolean).length}/{photoCount} 張已拍）
               </p>

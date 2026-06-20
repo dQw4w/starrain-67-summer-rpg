@@ -20,7 +20,8 @@ class Quest(BaseModel):
     options: Optional[list[QuestOption]] = None
     completed: bool = False
     completed_at: Optional[str] = None
-    locked: bool = False          # easy mode: revealed only after the previous quest is done
+    locked: bool = False          # revealed only after the previous quest is done
+    image: Optional[str] = None   # reference image for photo tasks (e.g. the glass exhibit to find)
 
 
 class Boss(BaseModel):
