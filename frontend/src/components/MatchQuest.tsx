@@ -144,7 +144,7 @@ export default function MatchQuest({ options, onChange }: Props) {
       <div className="flex h-full" style={{ gap: '15%' }}>
 
         {/* Animals — left column */}
-        <div className="flex flex-col justify-evenly flex-1 h-full" style={{ position: 'relative', zIndex: 10 }}>
+        <div className="flex flex-col gap-2 flex-1 h-full" style={{ position: 'relative', zIndex: 10 }}>
           {shuffledAnimals.map(animal => {
             const lvl    = animalLevel(animal)
             const c      = lvl ? LC[lvl] : null
@@ -159,7 +159,7 @@ export default function MatchQuest({ options, onChange }: Props) {
                   if (l) { const n = { ...connections }; delete n[l]; setConn(n) }
                 }}
                 className={[
-                  'h-24 px-2 py-1.5 flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 relative',
+                  'flex-1 min-h-0 px-2 pt-1.5 pb-1 flex flex-col items-center rounded-xl border-2 relative',
                   'cursor-grab active:cursor-grabbing transition-all',
                   active
                     ? 'border-white/80 bg-white/25 text-white scale-105 shadow-xl shadow-white/10'
@@ -173,10 +173,10 @@ export default function MatchQuest({ options, onChange }: Props) {
                     src={ANIMAL_IMAGE[animal]}
                     alt={animal}
                     draggable={false}
-                    className="h-12 w-full object-contain pointer-events-none"
+                    className="flex-1 min-h-0 w-full object-contain pointer-events-none"
                   />
                 )}
-                <span className="text-sm font-bold text-center leading-tight">{animal}</span>
+                <span className="text-sm font-bold text-center leading-tight shrink-0 mt-0.5">{animal}</span>
                 {lvl && !active && <span className="absolute top-1 right-1.5 text-xs opacity-40">✓</span>}
               </div>
             )
