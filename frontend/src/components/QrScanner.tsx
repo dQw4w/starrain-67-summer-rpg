@@ -11,12 +11,12 @@ export function bossQrContent(bossId: number) {
 interface Props {
   bossId: number
   bossName: string
+  testMode: boolean
   onSuccess: () => void
   onClose: () => void
 }
 
-export default function QrScanner({ bossId, bossName, onSuccess, onClose }: Props) {
-  const testMode = localStorage.getItem('qr_test_mode') === '1'
+export default function QrScanner({ bossId, bossName, testMode, onSuccess, onClose }: Props) {
 
   const [error, setError] = useState<string | null>(null)
   const [scanned, setScanned] = useState(false)

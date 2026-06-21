@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from routers import team, admin
+from routers import team, admin, settings
 from db import get_client
 from migrate import run_migrations
 from storage import ensure_bucket
@@ -28,6 +28,7 @@ app.add_middleware(
 
 app.include_router(team.router)
 app.include_router(admin.router)
+app.include_router(settings.router)
 
 
 @app.get("/health")

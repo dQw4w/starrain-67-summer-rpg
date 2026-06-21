@@ -1,4 +1,4 @@
-import type { TeamState } from './types'
+import type { TeamState, GameSettings } from './types'
 
 const BASE = '/api'
 
@@ -72,4 +72,8 @@ export const api = {
     }),
   adminDeleteAllPhotos: () =>
     req<{ ok: boolean; deleted: number }>('/admin/photos', { method: 'DELETE' }),
+
+  getSettings: () => req<GameSettings>('/settings'),
+  adminUpdateSettings: (body: Partial<GameSettings>) =>
+    req<GameSettings>('/settings', { method: 'PUT', body: JSON.stringify(body) }),
 }

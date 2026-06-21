@@ -33,6 +33,11 @@ export interface Boss {
   defeated_at: string | null
 }
 
+export interface GameSettings {
+  qr_test_mode: boolean
+  rain_mode: boolean
+}
+
 export interface TeamState {
   team_id: number
   name: string

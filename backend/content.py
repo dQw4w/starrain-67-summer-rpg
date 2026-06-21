@@ -159,6 +159,91 @@ for _q in QUESTS.values():
     BOSS_QUESTS[_q.boss_id].append(_q)
 
 
+# ── Rain-backup quests (placeholder — replace with real content before event) ─
+
+RAIN_QUESTS: dict[int, QuestDef] = {
+
+    1: QuestDef(
+        id=1, boss_id=1, name='【雨備】神秘大鳥知識王', emoji='🔍',
+        type='multiple_choice', order_index=1, image='/ostrich.png',
+        easy=Diff(
+            description='【雨備 placeholder】鴕鳥的蛋重量大約是多少？',
+            options=[
+                {"text": "0.5 公斤", "correct": False},
+                {"text": "1.5 公斤", "correct": True},
+                {"text": "5 公斤",   "correct": False},
+                {"text": "10 公斤",  "correct": False},
+            ],
+        ),
+        normal=Diff(
+            description='【雨備 placeholder】鴕鳥的蛋重量大約是多少？',
+            options=[
+                {"text": "0.5 公斤", "correct": False},
+                {"text": "1.5 公斤", "correct": True},
+                {"text": "5 公斤",   "correct": False},
+                {"text": "10 公斤",  "correct": False},
+            ],
+        ),
+        hard=Diff(
+            description='【雨備 placeholder】下列何者是鴕鳥的正確特徵？',
+            options=[
+                {"text": "會游泳",         "correct": False},
+                {"text": "腳有 2 根趾頭",  "correct": True},
+                {"text": "翅膀可以飛翔",   "correct": False},
+                {"text": "壽命約 5 年",    "correct": False},
+            ],
+        ),
+    ),
+
+    2: QuestDef(
+        id=2, boss_id=1, name='【雨備】靈長目大集合', emoji='🐒',
+        type='photo_task', order_index=2,
+        easy=Diff(
+            description='【雨備 placeholder】找到 1 種靈長目動物拍照！',
+            options=[{"count": 1}],
+        ),
+        normal=Diff(
+            description='【雨備 placeholder】找到 2 種靈長目動物分別拍照！',
+            options=[{"count": 2}],
+        ),
+        hard=Diff(
+            description='【雨備 placeholder】找到 3 種靈長目動物分別拍照！',
+            options=[{"count": 3}],
+        ),
+    ),
+
+    7: QuestDef(
+        id=7, boss_id=1, name='【雨備】動物保育知多少', emoji='🌿',
+        type='drag_match', order_index=3,
+        easy=Diff(
+            description='【雨備 placeholder】連線配對：把每隻動物和牠的保育等級連起來！',
+            options=[
+                {"animal": "台灣梅花鹿", "level": "無危 LC"},
+            ],
+        ),
+        normal=Diff(
+            description='【雨備 placeholder】連線配對：把每隻動物和牠的保育等級連起來！',
+            options=[
+                {"animal": "蘇卡達象龜", "level": "瀕危 EN"},
+                {"animal": "台灣梅花鹿", "level": "無危 LC"},
+            ],
+        ),
+        hard=Diff(
+            description='【雨備 placeholder】連線配對：把每隻動物和牠的保育等級連起來！',
+            options=[
+                {"animal": "蘇卡達象龜", "level": "瀕危 EN"},
+                {"animal": "河馬",        "level": "易危 VU"},
+                {"animal": "台灣梅花鹿", "level": "無危 LC"},
+            ],
+        ),
+    ),
+}
+
+RAIN_BOSS_QUESTS: dict[int, list[QuestDef]] = {bid: [] for bid in BOSSES}
+for _q in RAIN_QUESTS.values():
+    RAIN_BOSS_QUESTS[_q.boss_id].append(_q)
+
+
 # ── Sequential photo-task quests ─────────────────────────────────────────────
 # A "find it and take a group photo" task. They are completed in order: each one
 # stays locked until the previous in the same boss is done. Two uses:
@@ -183,6 +268,13 @@ BOSS1_EASY_ANIMALS: list[PhotoQuest] = [
     PhotoQuest(103, 1, '蘇卡達象龜',     '🐢', '找到【蘇卡達象龜】，全隊一起在牠前面拍一張合照並上傳！📸', 3),
 ]
 
+# Boss 1 rain-backup easy sequence (placeholder)
+RAIN_BOSS1_EASY_ANIMALS: list[PhotoQuest] = [
+    PhotoQuest(101, 1, '【雨備】台灣梅花鹿', '🦌', '【雨備 placeholder】找到【台灣梅花鹿】，全隊合照上傳！📸', 1),
+    PhotoQuest(102, 1, '【雨備】靈長目動物', '🦧', '【雨備 placeholder】找到任一種靈長目動物，全隊合照上傳！📸', 2),
+    PhotoQuest(103, 1, '【雨備】蘇卡達象龜', '🐢', '【雨備 placeholder】找到【蘇卡達象龜】，全隊合照上傳！📸', 3),
+]
+
 # Boss 2（粉怪・玻工館）— every difficulty: find 3 glass exhibits matching the photos
 BOSS2_GLASS: list[PhotoQuest] = [
     PhotoQuest(201, 2, '玻璃展品 ①', '🔍', '找到照片中的這件玻璃展品，全隊一起在它前面拍一張合照並上傳！📸', 1, image='/glass-1.jpg'),
@@ -190,17 +282,24 @@ BOSS2_GLASS: list[PhotoQuest] = [
     PhotoQuest(203, 2, '玻璃展品 ③', '✨', '找到照片中的這件玻璃展品，全隊一起在它前面拍一張合照並上傳！📸', 3, image='/glass-3.jpg'),
 ]
 
+# Boss 2 rain-backup sequence (placeholder)
+RAIN_BOSS2_GLASS: list[PhotoQuest] = [
+    PhotoQuest(201, 2, '【雨備】玻璃展品 ①', '🔍', '【雨備 placeholder】找到照片中的這件展品，全隊合照上傳！📸', 1, image='/glass-1.jpg'),
+    PhotoQuest(202, 2, '【雨備】玻璃展品 ②', '🔎', '【雨備 placeholder】找到照片中的這件展品，全隊合照上傳！📸', 2, image='/glass-2.jpg'),
+    PhotoQuest(203, 2, '【雨備】玻璃展品 ③', '✨', '【雨備 placeholder】找到照片中的這件展品，全隊合照上傳！📸', 3, image='/glass-3.jpg'),
+]
+
 PHOTO_QUESTS: dict[int, PhotoQuest] = {
     q.id: q for q in (*BOSS1_EASY_ANIMALS, *BOSS2_GLASS)
 }
 
 
-def boss_photo_sequence(boss_id: int, difficulty: str) -> Optional[list[PhotoQuest]]:
+def boss_photo_sequence(boss_id: int, difficulty: str, rain_mode: bool = False) -> Optional[list[PhotoQuest]]:
     """The photo-task sequence for a boss, or None to use the regular QUESTS."""
     if boss_id == 2:
-        return BOSS2_GLASS                       # all difficulties
+        return RAIN_BOSS2_GLASS if rain_mode else BOSS2_GLASS
     if boss_id == 1 and difficulty == "easy":
-        return BOSS1_EASY_ANIMALS
+        return RAIN_BOSS1_EASY_ANIMALS if rain_mode else BOSS1_EASY_ANIMALS
     return None
 
 

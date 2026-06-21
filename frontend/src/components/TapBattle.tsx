@@ -24,8 +24,9 @@ interface Props {
 }
 
 export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onClose }: Props) {
+  const [phase, setPhase]        = useState<'briefing' | 'battle'>('briefing')
   const [hp, setHp]             = useState(TOTAL_HP)
-  const [expected, setExpected] = useState<1 | 2 | 3>(1) // whose turn it is
+  const [expected, setExpected] = useState<1 | 2 | 3>(1)
   const [hitCount, setHitCount] = useState(0)
   const [cooldown, setCooldown] = useState(false)
   const [wrongPad, setWrongPad] = useState<number | null>(null)
@@ -38,20 +39,20 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
   const winFired    = useRef(false)
   const cdTimer     = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Grace period: swallow stray pointer events left over from the QR scan phase
+  // Grace period only starts once battle phase begins
   useEffect(() => {
+    if (phase !== 'battle') return
     const t = setTimeout(() => setReady(true), GRACE_MS)
     return () => {
       clearTimeout(t)
       if (cdTimer.current) clearTimeout(cdTimer.current)
     }
-  }, [])
+  }, [phase])
 
   const press = useCallback(async (n: 1 | 2 | 3) => {
     if (!ready || cdRef.current || hpRef.current <= 0) return
 
     if (n !== expectedRef.current) {
-      // Wrong order → penalty cooldown
       cdRef.current = true
       setCooldown(true)
       setWrongPad(n)
@@ -64,7 +65,6 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
       return
     }
 
-    // Correct press → damage boss, advance the turn
     const newHp = Math.max(0, hpRef.current - 1)
     hpRef.current = newHp
     setHp(newHp)
@@ -89,6 +89,71 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
   const pct = (hp / TOTAL_HP) * 100
   const hpColor = pct > 50 ? '#22c55e' : pct > 25 ? '#eab308' : '#ef4444'
 
+  // ── Briefing screen ─────────────────────────────────────────────────────────
+  if (phase === 'briefing') {
+    return (
+      <div
+        className="fixed inset-0 z-50 overflow-hidden select-none flex flex-col"
+        style={{ background: 'radial-gradient(ellipse at 50% 15%, #3b0a0a 0%, #0c0c14 65%)', touchAction: 'none' }}
+      >
+        {/* Header row: close + ready button */}
+        <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-3 gap-3">
+          <button className="text-white/25 hover:text-white/60 p-2" onClick={onClose}>
+            <X size={20} />
+          </button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setPhase('battle')}
+            className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-brand-red to-brand-orange text-white font-black text-lg shadow-lg shadow-red-500/30"
+          >
+            準備好了！⚔️
+          </motion.button>
+        </div>
+
+        {/* Boss */}
+        <div className="shrink-0 flex flex-col items-center pt-2 pb-4 px-6 pointer-events-none">
+          <p className="text-white/40 text-xs font-bold tracking-widest uppercase mb-3">⚔️ 挑戰 {bossName}</p>
+          <div className="w-36 h-36">
+            <BossImage bossId={bossId} emoji={bossEmoji} className="w-full h-full" />
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="shrink-0 px-8 text-center">
+          <p className="text-white/80 text-base font-bold leading-relaxed">
+            三個人每人把一隻手指<br />放在自己的攻擊按鈕上
+          </p>
+          <p className="text-white/40 text-sm mt-2">
+            準備好後，按上方「準備好了」開始！
+          </p>
+          <p className="text-white/30 text-xs mt-1">
+            順序：一號 → 二號 → 三號 → 重複
+          </p>
+        </div>
+
+        {/* Pads (visual only — no interaction) */}
+        <div className="flex-1 flex items-center justify-between px-6 pb-10">
+          {PADS.map(pad => (
+            <div key={pad.n} className="flex flex-col items-center gap-2">
+              <div
+                className="rounded-full flex items-center justify-center font-black text-white opacity-60"
+                style={{
+                  width: 'clamp(90px, 28vw, 140px)',
+                  height: 'clamp(90px, 28vw, 140px)',
+                  background: pad.color,
+                }}
+              >
+                <span className="text-5xl drop-shadow">{pad.n}</span>
+              </div>
+              <span className="text-white/50 text-xs font-bold">{pad.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Battle screen ────────────────────────────────────────────────────────────
   return (
     <div
       className="fixed inset-0 z-50 overflow-hidden select-none flex flex-col"
@@ -108,17 +173,17 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
       )}
 
       {/* Top: boss display */}
-      <div className="shrink-0 flex flex-col items-center pt-8 px-6 gap-3 pointer-events-none">
+      <div className="shrink-0 flex flex-col items-center pt-6 px-6 gap-3 pointer-events-none">
         <p className="text-white/40 text-xs font-bold tracking-widest uppercase">⚔️ 挑戰 {bossName}</p>
 
         <motion.div
           key={hitCount}
-          className="w-24 h-24"
+          className="w-36 h-36"
           animate={hitCount > 0 && !won ? { x: [-8, 8, -5, 5, 0], rotate: [-4, 4, -2, 2, 0] } : {}}
           transition={{ duration: 0.28 }}
         >
           {won
-            ? <span className="text-[80px] leading-none flex items-center justify-center w-full h-full">💀</span>
+            ? <span className="text-[120px] leading-none flex items-center justify-center w-full h-full">💀</span>
             : <BossImage bossId={bossId} emoji={bossEmoji} className="w-full h-full" />}
         </motion.div>
 
@@ -140,7 +205,7 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
 
       {/* Middle: instructions / status */}
       {!won && (
-        <div className="shrink-0 text-center px-6 mt-4 h-14 flex items-center justify-center">
+        <div className="shrink-0 text-center px-6 mt-3 h-14 flex items-center justify-center">
           {!ready ? (
             <motion.p
               className="text-brand-yellow/70 text-2xl font-black"
@@ -170,9 +235,9 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
         </div>
       )}
 
-      {/* Bottom: three pads */}
+      {/* Bottom: three pads — spread to edges */}
       {!won && (
-        <div className="flex-1 flex items-center justify-center gap-4 sm:gap-8 px-4 pb-10">
+        <div className="flex-1 flex items-center justify-between px-6 pb-10">
           {PADS.map(pad => {
             const isTurn  = ready && !cooldown && expected === pad.n
             const isWrong = wrongPad === pad.n
@@ -183,11 +248,11 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
                   disabled={!ready}
                   className="rounded-full flex items-center justify-center font-black text-white"
                   style={{
-                    width: 'clamp(80px, 26vw, 130px)',
-                    height: 'clamp(80px, 26vw, 130px)',
+                    width: 'clamp(90px, 28vw, 140px)',
+                    height: 'clamp(90px, 28vw, 140px)',
                     background: isWrong ? '#ef4444' : pad.color,
                     opacity: isTurn ? 1 : 0.4,
-                    boxShadow: isTurn ? `0 0 36px 6px ${pad.glow}` : 'none',
+                    boxShadow: isTurn ? `0 0 40px 8px ${pad.glow}` : 'none',
                     touchAction: 'none',
                   }}
                   animate={

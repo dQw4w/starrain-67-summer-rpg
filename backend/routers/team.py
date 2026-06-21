@@ -4,7 +4,8 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from db import get_client
 from models import TeamState, Boss, Quest, QuestOption, DifficultyUpdate, QuestCompleteRequest
 from content import (
-    BOSSES, QUESTS, BOSS_QUESTS, TEAMS, QuestDef, Diff,
+    BOSSES, QUESTS, BOSS_QUESTS, RAIN_QUESTS, RAIN_BOSS_QUESTS,
+    TEAMS, QuestDef, Diff,
     PhotoQuest, boss_photo_sequence, quest_type,
 )
 from storage import BUCKET, ALLOWED_EXT
@@ -52,19 +53,23 @@ def _build_team_state(
     difficulty: str,
     quest_progress: list[dict],
     boss_defeats: list[dict],
+    rain_mode: bool = False,
 ) -> TeamState:
     progress_map: dict[int, dict] = {r["quest_id"]: r for r in quest_progress}
     defeat_map:   dict[int, dict] = {r["boss_id"]:  r for r in boss_defeats}
 
+    active_quests    = RAIN_QUESTS    if rain_mode else QUESTS
+    active_boss_quests = RAIN_BOSS_QUESTS if rain_mode else BOSS_QUESTS
+
     boss_list: list[Boss] = []
     for boss_def in sorted(BOSSES.values(), key=lambda b: b.order_index):
-        seq = boss_photo_sequence(boss_def.id, difficulty)
+        seq = boss_photo_sequence(boss_def.id, difficulty, rain_mode=rain_mode)
         if seq is not None:
             quests = _resolve_photo_sequence(seq, progress_map)
         else:
             quests = [
                 _resolve_quest(q, getattr(q, difficulty), progress_map)
-                for q in sorted(BOSS_QUESTS[boss_def.id], key=lambda q: q.order_index)
+                for q in sorted(active_boss_quests[boss_def.id], key=lambda q: q.order_index)
             ]
         all_done = bool(quests) and all(q.completed for q in quests)
         defeat = defeat_map.get(boss_def.id, {})
@@ -90,11 +95,13 @@ def _fetch_state(team_id: int) -> TeamState:
     if team_id not in TEAMS:
         raise HTTPException(404, "Team not found")
     db = get_client()
-    team_res  = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
+    team_res   = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
     difficulty = team_res.data["difficulty"] if team_res.data else "normal"
     progress   = db.table("team_quest_progress").select("*").eq("team_id", team_id).execute().data
     defeats    = db.table("team_boss_defeats").select("*").eq("team_id", team_id).execute().data
-    return _build_team_state(team_id, difficulty, progress, defeats)
+    settings   = db.table("game_settings").select("rain_mode").eq("id", 1).maybe_single().execute()
+    rain_mode  = (settings.data or {}).get("rain_mode", False)
+    return _build_team_state(team_id, difficulty, progress, defeats, rain_mode=rain_mode)
 
 
 @router.get("/{team_id}", response_model=TeamState)

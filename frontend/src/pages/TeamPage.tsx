@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
-import type { TeamState } from '../types'
+import type { TeamState, GameSettings } from '../types'
 import { api } from '../api'
 import BossCard from '../components/BossCard'
 import DifficultyModal from '../components/DifficultyModal'
@@ -14,6 +14,7 @@ export default function TeamPage() {
   const id = Number(teamId) || 1
 
   const [state, setState] = useState<TeamState | null>(null)
+  const [settings, setSettings] = useState<GameSettings>({ qr_test_mode: false, rain_mode: false })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showDifficulty, setShowDifficulty] = useState(false)
@@ -29,8 +30,9 @@ export default function TeamPage() {
 
   const load = useCallback(async () => {
     try {
-      const data = await api.getTeam(id)
+      const [data, s] = await Promise.all([api.getTeam(id), api.getSettings()])
       setState(data)
+      setSettings(s)
       setError(null)
     } catch {
       setError('無法連線，請確認網路後重試')
@@ -134,6 +136,7 @@ export default function TeamPage() {
             >
               <BossCard
                 boss={boss}
+                testMode={settings.qr_test_mode}
                 onQuestSubmit={handleQuestSubmit}
                 onPhotoSubmit={handlePhotoSubmit}
                 onDefeat={handleDefeat}

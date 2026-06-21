@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, RotateCcw, ExternalLink, CheckCircle, Circle, Shield, Eye, EyeOff, QrCode, Images, Download, ImageOff, X, Trash2, Check, FlaskConical } from 'lucide-react'
-import type { TeamState, Boss } from '../types'
+import { RefreshCw, RotateCcw, ExternalLink, CheckCircle, Circle, Shield, Eye, EyeOff, QrCode, Images, Download, ImageOff, X, Trash2, Check, FlaskConical, CloudRain } from 'lucide-react'
+import type { TeamState, Boss, GameSettings } from '../types'
 import { api } from '../api'
 
 // ── Simple PIN gate ──────────────────────────────────────────────────────────
@@ -429,12 +429,19 @@ export default function AdminPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [confirmDelPhotos, setConfirmDelPhotos] = useState(false)
   const [delPhotosBusy, setDelPhotosBusy] = useState(false)
-  const [testMode, setTestMode] = useState(() => localStorage.getItem('qr_test_mode') === '1')
+  const [gameSettings, setGameSettings] = useState<GameSettings>({ qr_test_mode: false, rain_mode: false })
+  const [settingsBusy, setSettingsBusy] = useState(false)
 
-  const toggleTestMode = () => {
-    const next = !testMode
-    setTestMode(next)
-    localStorage.setItem('qr_test_mode', next ? '1' : '0')
+  const toggleSetting = async (key: keyof GameSettings) => {
+    const next = !gameSettings[key]
+    setGameSettings(prev => ({ ...prev, [key]: next }))
+    setSettingsBusy(true)
+    try {
+      const updated = await api.adminUpdateSettings({ [key]: next })
+      setGameSettings(updated)
+    } finally {
+      setSettingsBusy(false)
+    }
   }
 
   const handleDeleteAllPhotos = async () => {
@@ -449,9 +456,10 @@ export default function AdminPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const list = await api.adminListTeams()
+    const [list, s] = await Promise.all([api.adminListTeams(), api.getSettings()])
     const full = await Promise.all(list.map(t => api.adminGetTeam(t.id)))
     setTeams(full)
+    setGameSettings(s)
     setLastUpdated(new Date())
     setLoading(false)
   }, [])
@@ -553,27 +561,45 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Test mode toggle */}
-      <button
-        onClick={toggleTestMode}
-        className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border mb-4 transition-colors font-bold text-sm ${
-          testMode
-            ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-            : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'
-        }`}
-      >
-        <span className="flex items-center gap-2">
-          <FlaskConical size={16} />
-          掃描測試模式（跳過QR碼掃描）
-        </span>
-        <span className={`w-10 h-6 rounded-full flex items-center transition-colors shrink-0 px-0.5 ${testMode ? 'bg-amber-500' : 'bg-white/20'}`}>
-          <motion.span
-            animate={{ x: testMode ? 16 : 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="w-5 h-5 bg-white rounded-full block shadow"
-          />
-        </span>
-      </button>
+      {/* Global toggles */}
+      <div className="space-y-2 mb-4">
+        {([
+          { key: 'qr_test_mode' as const, icon: FlaskConical, label: '掃描測試模式（跳過QR碼掃描）', color: 'amber' },
+          { key: 'rain_mode'    as const, icon: CloudRain,    label: '雨備模式（切換備用題目）',        color: 'sky'   },
+        ] as const).map(({ key, icon: Icon, label, color }) => {
+          const on = gameSettings[key]
+          return (
+            <button
+              key={key}
+              onClick={() => !settingsBusy && toggleSetting(key)}
+              disabled={settingsBusy}
+              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border transition-colors font-bold text-sm disabled:opacity-60 ${
+                on
+                  ? color === 'amber'
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                    : 'bg-sky-500/20 border-sky-500/50 text-sky-300'
+                  : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <Icon size={16} />
+                {label}
+              </span>
+              <span className={`w-10 h-6 rounded-full flex items-center shrink-0 px-0.5 transition-colors ${
+                on
+                  ? color === 'amber' ? 'bg-amber-500' : 'bg-sky-500'
+                  : 'bg-white/20'
+              }`}>
+                <motion.span
+                  animate={{ x: on ? 16 : 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  className="w-5 h-5 bg-white rounded-full block shadow"
+                />
+              </span>
+            </button>
+          )
+        })}
+      </div>
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3 mb-6">

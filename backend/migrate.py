@@ -39,6 +39,13 @@ CREATE TABLE IF NOT EXISTS team_boss_defeats (
     defeated_at TIMESTAMPTZ,
     PRIMARY KEY (team_id, boss_id)
 );
+
+CREATE TABLE IF NOT EXISTS game_settings (
+    id           INTEGER PRIMARY KEY DEFAULT 1,
+    qr_test_mode BOOLEAN NOT NULL DEFAULT FALSE,
+    rain_mode    BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT game_settings_single_row CHECK (id = 1)
+);
 """
 
 
@@ -62,6 +69,6 @@ def run_migrations() -> None:
     seed = "; ".join(
         f"INSERT INTO teams (id, name, difficulty) VALUES ({tid}, $${name}$$, 'normal') ON CONFLICT (id) DO NOTHING"
         for tid, name in TEAMS.items()
-    ) + ";"
+    ) + "; INSERT INTO game_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;"
     _exec(seed)
     logger.info("Migrations complete.")
