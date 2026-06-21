@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, RotateCcw, ExternalLink, CheckCircle, Circle, Shield, Eye, EyeOff, QrCode, Images, Download, ImageOff, X, Trash2, Check } from 'lucide-react'
+import { RefreshCw, RotateCcw, ExternalLink, CheckCircle, Circle, Shield, Eye, EyeOff, QrCode, Images, Download, ImageOff, X, Trash2, Check, FlaskConical } from 'lucide-react'
 import type { TeamState, Boss } from '../types'
 import { api } from '../api'
 
@@ -429,6 +429,13 @@ export default function AdminPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [confirmDelPhotos, setConfirmDelPhotos] = useState(false)
   const [delPhotosBusy, setDelPhotosBusy] = useState(false)
+  const [testMode, setTestMode] = useState(() => localStorage.getItem('qr_test_mode') === '1')
+
+  const toggleTestMode = () => {
+    const next = !testMode
+    setTestMode(next)
+    localStorage.setItem('qr_test_mode', next ? '1' : '0')
+  }
 
   const handleDeleteAllPhotos = async () => {
     setDelPhotosBusy(true)
@@ -545,6 +552,28 @@ export default function AdminPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Test mode toggle */}
+      <button
+        onClick={toggleTestMode}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border mb-4 transition-colors font-bold text-sm ${
+          testMode
+            ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+            : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          <FlaskConical size={16} />
+          掃描測試模式（跳過QR碼掃描）
+        </span>
+        <span className={`w-10 h-6 rounded-full flex items-center transition-colors shrink-0 px-0.5 ${testMode ? 'bg-amber-500' : 'bg-white/20'}`}>
+          <motion.span
+            animate={{ x: testMode ? 16 : 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="w-5 h-5 bg-white rounded-full block shadow"
+          />
+        </span>
+      </button>
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3 mb-6">
