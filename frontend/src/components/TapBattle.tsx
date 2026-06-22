@@ -113,7 +113,7 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
         {/* Boss */}
         <div className="shrink-0 flex flex-col items-center pt-2 pb-4 px-6 pointer-events-none">
           <p className="text-white/40 text-xs font-bold tracking-widest uppercase mb-3">⚔️ 挑戰 {bossName}</p>
-          <div className="w-36 h-36">
+          <div className="w-48 h-48">
             <BossImage bossId={bossId} emoji={bossEmoji} className="w-full h-full" />
           </div>
         </div>
@@ -138,8 +138,8 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
               <div
                 className="rounded-full flex items-center justify-center font-black text-white opacity-60"
                 style={{
-                  width: 'clamp(90px, 28vw, 140px)',
-                  height: 'clamp(90px, 28vw, 140px)',
+                  width: 'clamp(110px, 30vw, 170px)',
+                  height: 'clamp(110px, 30vw, 170px)',
                   background: pad.color,
                 }}
               >
@@ -178,7 +178,7 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
 
         <motion.div
           key={hitCount}
-          className="w-36 h-36"
+          className="w-48 h-48"
           animate={hitCount > 0 && !won ? { x: [-8, 8, -5, 5, 0], rotate: [-4, 4, -2, 2, 0] } : {}}
           transition={{ duration: 0.28 }}
         >

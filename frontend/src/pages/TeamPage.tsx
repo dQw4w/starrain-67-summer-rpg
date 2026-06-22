@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
@@ -6,8 +6,6 @@ import type { TeamState, GameSettings } from '../types'
 import { api } from '../api'
 import BossCard from '../components/BossCard'
 import DifficultyModal from '../components/DifficultyModal'
-
-const LONG_PRESS_MS = 1500
 
 export default function TeamPage() {
   const { teamId } = useParams<{ teamId: string }>()
@@ -18,15 +16,6 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showDifficulty, setShowDifficulty] = useState(false)
-
-  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const startPress = () => {
-    pressTimer.current = setTimeout(() => setShowDifficulty(true), LONG_PRESS_MS)
-  }
-  const cancelPress = () => {
-    if (pressTimer.current) clearTimeout(pressTimer.current)
-  }
 
   const load = useCallback(async () => {
     try {
@@ -97,11 +86,8 @@ export default function TeamPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div
-          className="flex items-center gap-3 select-none cursor-default"
-          onMouseDown={startPress}
-          onMouseUp={cancelPress}
-          onTouchStart={startPress}
-          onTouchEnd={cancelPress}
+          className="flex items-center gap-3 select-none cursor-pointer"
+          onClick={() => setShowDifficulty(true)}
         >
           <motion.img
             src="/goodduck.png"
