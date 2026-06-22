@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle, Lock, MapPin, QrCode } from 'lucide-react'
+import { CheckCircle, Lock, MapPin, QrCode, Map, X } from 'lucide-react'
 import type { Boss, Quest } from '../types'
 import QuestModal from './QuestModal'
 import QrScanner from './QrScanner'
@@ -10,16 +10,18 @@ import BossImage from './BossImage'
 interface Props {
   boss: Boss
   testMode: boolean
+  rainMode: boolean
   onQuestSubmit: (questId: number, answerIndex?: number, answerText?: string) => Promise<boolean>
   onPhotoSubmit: (questId: number, files: File[]) => Promise<boolean>
   onDefeat: (bossId: number) => Promise<void>
 }
 
-export default function BossCard({ boss, testMode, onQuestSubmit, onPhotoSubmit, onDefeat }: Props) {
+export default function BossCard({ boss, testMode, rainMode, onQuestSubmit, onPhotoSubmit, onDefeat }: Props) {
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [showLocation, setShowLocation] = useState(false)
   const [scanning, setScanning] = useState(false)   // QR scan step
   const [battling, setBattling] = useState(false)   // tap battle step
+  const [showMap, setShowMap] = useState(false)
 
   const doneCount = boss.quests.filter(q => q.completed).length
   const total = boss.quests.length
@@ -156,7 +158,52 @@ export default function BossCard({ boss, testMode, onQuestSubmit, onPhotoSubmit,
             </motion.button>
           </div>
         )}
+
+        {/* Zoo map button — boss 1, non-rain mode only */}
+        {boss.id === 1 && !rainMode && (
+          <div className="px-5 py-3 border-t border-white/10">
+            <button
+              onClick={() => setShowMap(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 transition-colors text-sm font-bold"
+            >
+              <Map size={15} /> 查看動物園地圖
+            </button>
+          </div>
+        )}
       </motion.div>
+
+      {/* Zoo map overlay */}
+      <AnimatePresence>
+        {showMap && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowMap(false)}
+          >
+            <motion.div
+              className="relative max-w-full max-h-full"
+              initial={{ scale: 0.92 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.92 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowMap(false)}
+                className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5"
+              >
+                <X size={18} />
+              </button>
+              <img
+                src="/zoo_map.png"
+                alt="動物園地圖"
+                className="max-w-full max-h-[92dvh] object-contain rounded-xl"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {activeQuest && (
         <QuestModal

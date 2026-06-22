@@ -36,13 +36,22 @@ def _resolve_photo_quest(pq: PhotoQuest, progress_map: dict, locked: bool) -> Qu
     )
 
 
-def _resolve_photo_sequence(seq: list[PhotoQuest], progress_map: dict) -> list[Quest]:
-    """Sequential photo tasks: each one stays locked until the previous is done."""
+def _rotate(items: list, team_id: int) -> list:
+    """Cyclic-shift so each team starts at a different quest (human traffic control)."""
+    n = len(items)
+    if n <= 1:
+        return list(items)
+    shift = (team_id - 1) % n
+    return items[shift:] + items[:shift]
+
+
+def _resolve_photo_sequence(seq: list[PhotoQuest], progress_map: dict, team_id: int = 1) -> list[Quest]:
+    """Sequential photo tasks with team-specific ordering."""
+    ordered = _rotate(sorted(seq, key=lambda q: q.order_index), team_id)
     quests: list[Quest] = []
     prev_done = True
-    for pq in sorted(seq, key=lambda q: q.order_index):
+    for pq in ordered:
         done = progress_map.get(pq.id, {}).get("completed", False)
-        # locked only if a prior quest is unfinished AND this one isn't already done
         quests.append(_resolve_photo_quest(pq, progress_map, locked=(not prev_done) and not done))
         prev_done = prev_done and done
     return quests
@@ -65,12 +74,19 @@ def _build_team_state(
     for boss_def in sorted(BOSSES.values(), key=lambda b: b.order_index):
         seq = boss_photo_sequence(boss_def.id, difficulty, rain_mode=rain_mode)
         if seq is not None:
-            quests = _resolve_photo_sequence(seq, progress_map)
+            quests = _resolve_photo_sequence(seq, progress_map, team_id)
         else:
-            quests = [
-                _resolve_quest(q, getattr(q, difficulty), progress_map)
-                for q in sorted(active_boss_quests[boss_def.id], key=lambda q: q.order_index)
-            ]
+            # Apply team-specific rotation + sequential locking for all difficulties
+            raw = sorted(active_boss_quests[boss_def.id], key=lambda q: q.order_index)
+            ordered = _rotate(raw, team_id)
+            quests = []
+            prev_done = True
+            for q in ordered:
+                rq = _resolve_quest(q, getattr(q, difficulty), progress_map)
+                if not prev_done and not rq.completed:
+                    rq = rq.model_copy(update={'locked': True})
+                prev_done = prev_done and rq.completed
+                quests.append(rq)
         all_done = bool(quests) and all(q.completed for q in quests)
         defeat = defeat_map.get(boss_def.id, {})
         boss_list.append(Boss(

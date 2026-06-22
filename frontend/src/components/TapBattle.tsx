@@ -182,9 +182,7 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
           animate={hitCount > 0 && !won ? { x: [-8, 8, -5, 5, 0], rotate: [-4, 4, -2, 2, 0] } : {}}
           transition={{ duration: 0.28 }}
         >
-          {won
-            ? <span className="text-[120px] leading-none flex items-center justify-center w-full h-full">💀</span>
-            : <BossImage bossId={bossId} emoji={bossEmoji} className="w-full h-full" />}
+          {!won && <BossImage bossId={bossId} emoji={bossEmoji} className="w-full h-full" />}
         </motion.div>
 
         {/* HP bar */}

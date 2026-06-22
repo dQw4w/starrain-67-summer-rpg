@@ -123,6 +123,7 @@ export default function TeamPage() {
               <BossCard
                 boss={boss}
                 testMode={settings.qr_test_mode}
+                rainMode={settings.rain_mode}
                 onQuestSubmit={handleQuestSubmit}
                 onPhotoSubmit={handlePhotoSubmit}
                 onDefeat={handleDefeat}
