@@ -207,11 +207,11 @@ class PhotoQuest:
     image: Optional[str] = None   # reference image URL shown to the team (served from /public)
 
 
-# Boss 1（米怪・動物園）— easy mode only: 3 animals drawn from the regular questions
+# Boss 1（米怪・動物園）— easy mode only
 BOSS1_EASY_ANIMALS: list[PhotoQuest] = [
-    PhotoQuest(101, 1, '台灣梅花鹿',     '🦌', '找到【台灣梅花鹿】，全隊一起在牠前面拍一張開心的合照並上傳！📸', 1),
-    PhotoQuest(102, 1, '婆羅洲紅毛猩猩', '🦧', '找到【婆羅洲紅毛猩猩】，全隊一起在牠前面拍一張合照並上傳！📸', 2),
-    PhotoQuest(103, 1, '蘇卡達象龜',     '🐢', '找到【蘇卡達象龜】，全隊一起在牠前面拍一張合照並上傳！📸', 3),
+    PhotoQuest(101, 1, '鴕鳥',           '🦤', '找到【鴕鳥】，全隊一起在牠前面拍一張合照並上傳！📸',           1, image='/ostrich.png'),
+    PhotoQuest(102, 1, '婆羅洲紅毛猩猩', '🦧', '找到【婆羅洲紅毛猩猩】，全隊一起在牠前面拍一張合照並上傳！📸', 2, image='/gorilla.png'),
+    PhotoQuest(103, 1, '台灣梅花鹿',     '🦌', '找到【台灣梅花鹿】，全隊一起在牠前面拍一張開心的合照並上傳！📸', 3, image='/deer.png'),
 ]
 
 RAIN_BOSS1_EASY_ANIMALS: list[PhotoQuest] = [
