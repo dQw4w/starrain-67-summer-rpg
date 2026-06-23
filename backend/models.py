@@ -39,6 +39,7 @@ class Boss(BaseModel):
 
 class TeamState(BaseModel):
     team_id: int
+    token: str
     name: str
     difficulty: str
     bosses: list[Boss]

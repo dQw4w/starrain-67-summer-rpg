@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from db import get_client
 from models import AdminTeamUpdate, AdminQuestOverride, AdminBossOverride, PhotoDeleteRequest
 from routers.team import _fetch_state
-from content import BOSSES, QUESTS, TEAMS, quest_name
+from content import BOSSES, QUESTS, TEAMS, TEAM_BY_TOKEN, quest_name
 from storage import BUCKET, media_type_for
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -18,7 +18,7 @@ def list_teams():
     rows = db.table("teams").select("id, difficulty").order("id").execute().data
     diff_map = {r["id"]: r["difficulty"] for r in rows}
     return [
-        {"id": tid, "name": name, "difficulty": diff_map.get(tid, "normal")}
+        {"id": tid, "name": name, "difficulty": diff_map.get(tid, "normal"), "token": TEAM_BY_TOKEN.get(tid, "")}
         for tid, name in sorted(TEAMS.items())
     ]
 

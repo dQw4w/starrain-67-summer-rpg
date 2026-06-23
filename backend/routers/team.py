@@ -5,7 +5,7 @@ from db import get_client
 from models import TeamState, Boss, Quest, QuestOption, DifficultyUpdate, QuestCompleteRequest
 from content import (
     BOSSES, QUESTS, BOSS_QUESTS, RAIN_QUESTS, RAIN_BOSS_QUESTS,
-    TEAMS, QuestDef, Diff,
+    TEAMS, TEAM_TOKENS, TEAM_BY_TOKEN, QuestDef, Diff,
     PhotoQuest, boss_photo_sequence, quest_type,
 )
 from storage import BUCKET, ALLOWED_EXT
@@ -117,7 +117,8 @@ def _build_team_state(
 
     pieces = sum(1 for b in boss_list if b.defeated)
     return TeamState(
-        team_id=team_id, name=TEAMS[team_id], difficulty=difficulty,
+        team_id=team_id, token=TEAM_BY_TOKEN.get(team_id, ""),
+        name=TEAMS[team_id], difficulty=difficulty,
         bosses=boss_list, puzzle_pieces=pieces, total_bosses=len(boss_list),
         victory=pieces == len(boss_list) and len(boss_list) > 0,
     )
@@ -134,6 +135,14 @@ def _fetch_state(team_id: int) -> TeamState:
     settings   = db.table("game_settings").select("rain_mode").eq("id", 1).maybe_single().execute()
     rain_mode  = (settings.data or {}).get("rain_mode", False)
     return _build_team_state(team_id, difficulty, progress, defeats, rain_mode=rain_mode)
+
+
+@router.get("/t/{token}", response_model=TeamState)
+def get_team_state_by_token(token: str):
+    team_id = TEAM_TOKENS.get(token)
+    if team_id is None:
+        raise HTTPException(404, "Team not found")
+    return _fetch_state(team_id)
 
 
 @router.get("/{team_id}", response_model=TeamState)

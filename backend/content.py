@@ -42,6 +42,14 @@ TEAMS: dict[int, str] = {
     3: "第三探險小隊",
 }
 
+# URL tokens — change these before the event if desired
+TEAM_TOKENS: dict[str, int] = {
+    "r7kx2wqp": 1,
+    "m4jb9fz6": 2,
+    "ycz4ns7d": 3,
+}
+TEAM_BY_TOKEN: dict[int, str] = {v: k for k, v in TEAM_TOKENS.items()}
+
 # ── Bosses ────────────────────────────────────────────────────────────────────
 
 BOSSES: dict[int, BossDef] = {

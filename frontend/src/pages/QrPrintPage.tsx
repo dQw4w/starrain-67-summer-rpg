@@ -16,9 +16,10 @@ interface TeamInfo {
   id: number
   name: string
   difficulty: string
+  token: string
 }
 
-const teamUrl = (teamId: number) => `${window.location.origin}/team/${teamId}`
+const teamUrl = (token: string) => `${window.location.origin}/team/${token}`
 
 const TEAM_COLORS: Record<number, { border: string; badge: string; text: string }> = {
   1: { border: 'border-blue-300',   badge: 'bg-blue-100 text-blue-700',   text: 'text-blue-700'   },
@@ -102,7 +103,7 @@ export default function QrPrintPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 print:grid-cols-3 print:gap-4">
             {teams.map(team => {
-              const url = teamUrl(team.id)
+              const url = teamUrl(team.token)
               const c   = TEAM_COLORS[team.id] ?? TEAM_COLORS[1]
               return (
                 <div

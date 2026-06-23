@@ -271,7 +271,7 @@ function TeamCard({
   const totalQuests = team.bosses.reduce((a, b) => a + b.quests.length, 0)
   const doneQuests  = team.bosses.reduce((a, b) => a + b.quests.filter(q => q.completed).length, 0)
   const defeatedBosses = team.bosses.filter(b => b.defeated).length
-  const teamUrl = `${window.location.origin}/team/${team.team_id}`
+  const teamUrl = `${window.location.origin}/team/${team.token}`
 
   return (
     <>

@@ -8,8 +8,7 @@ import BossCard from '../components/BossCard'
 import DifficultyModal from '../components/DifficultyModal'
 
 export default function TeamPage() {
-  const { teamId } = useParams<{ teamId: string }>()
-  const id = Number(teamId) || 1
+  const { token } = useParams<{ token: string }>()
 
   const [state, setState] = useState<TeamState | null>(null)
   const [settings, setSettings] = useState<GameSettings>({ qr_test_mode: false, rain_mode: false })
@@ -19,7 +18,7 @@ export default function TeamPage() {
 
   const load = useCallback(async () => {
     try {
-      const [data, s] = await Promise.all([api.getTeam(id), api.getSettings()])
+      const [data, s] = await Promise.all([api.getTeamByToken(token!), api.getSettings()])
       setState(data)
       setSettings(s)
       setError(null)
@@ -28,7 +27,7 @@ export default function TeamPage() {
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [token])
 
   useEffect(() => { load() }, [load])
 
@@ -38,24 +37,24 @@ export default function TeamPage() {
   }, [load])
 
   const handleQuestSubmit = async (questId: number, answerIndex?: number, answerText?: string): Promise<boolean> => {
-    const res = await api.completeQuest(id, questId, answerIndex, answerText)
+    const res = await api.completeQuest(state!.team_id, questId, answerIndex, answerText)
     if (res.correct) await load()
     return res.correct
   }
 
   const handlePhotoSubmit = async (questId: number, files: File[]): Promise<boolean> => {
-    await api.uploadQuestPhotos(id, questId, files)
+    await api.uploadQuestPhotos(state!.team_id, questId, files)
     await load()
     return true
   }
 
   const handleDefeat = async (bossId: number) => {
-    await api.defeatBoss(id, bossId)
+    await api.defeatBoss(state!.team_id, bossId)
     await load()
   }
 
   const handleDifficulty = async (d: string) => {
-    await api.setDifficulty(id, d)
+    await api.setDifficulty(state!.team_id, d)
     await load()
   }
 

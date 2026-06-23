@@ -40,6 +40,7 @@ export interface GameSettings {
 
 export interface TeamState {
   team_id: number
+  token: string
   name: string
   difficulty: string
   bosses: Boss[]

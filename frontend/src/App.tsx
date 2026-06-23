@@ -9,11 +9,11 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
-          <Route path="/team/:teamId" element={<TeamPage />} />
+          <Route path="/team/:token" element={<TeamPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/qr" element={<QrPrintPage />} />
-          <Route path="/" element={<Navigate to="/team/1" replace />} />
-          <Route path="*" element={<Navigate to="/team/1" replace />} />
+          <Route path="/" element={<Navigate to="/admin" replace />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>

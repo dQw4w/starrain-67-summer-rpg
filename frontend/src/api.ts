@@ -13,6 +13,7 @@ async function req<T>(url: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   getTeam: (id: number) => req<TeamState>(`/team/${id}`),
+  getTeamByToken: (token: string) => req<TeamState>(`/team/t/${token}`),
 
   setDifficulty: (teamId: number, difficulty: string) =>
     req(`/team/${teamId}/difficulty`, {
@@ -41,7 +42,7 @@ export const api = {
     req(`/team/${teamId}/boss/${bossId}/defeat`, { method: 'POST' }),
 
   // admin
-  adminListTeams: () => req<{ id: number; name: string; difficulty: string }[]>('/admin/teams'),
+  adminListTeams: () => req<{ id: number; name: string; difficulty: string; token: string }[]>('/admin/teams'),
   adminGetTeam: (id: number) => req<TeamState>(`/admin/teams/${id}`),
   adminUpdateTeam: (id: number, body: { difficulty?: string; name?: string }) =>
     req(`/admin/teams/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
