@@ -36,6 +36,22 @@ def _resolve_photo_quest(pq: PhotoQuest, progress_map: dict, locked: bool) -> Qu
     )
 
 
+# easy quest IDs ↔ normal/hard quest IDs (same physical task, different format)
+_SYNC_PAIRS = [(101, 1), (102, 2), (103, 7)]
+
+def _sync_progress(progress_map: dict) -> dict:
+    """Propagate completions across difficulty-equivalent quest pairs."""
+    synced = dict(progress_map)
+    for a, b in _SYNC_PAIRS:
+        a_done = synced.get(a, {}).get("completed", False)
+        b_done = synced.get(b, {}).get("completed", False)
+        if a_done and not b_done:
+            synced[b] = {**synced[a], "quest_id": b}
+        elif b_done and not a_done:
+            synced[a] = {**synced[b], "quest_id": a}
+    return synced
+
+
 def _rotate(items: list, team_id: int) -> list:
     """Cyclic-shift so each team starts at a different quest (human traffic control)."""
     n = len(items)
@@ -64,7 +80,7 @@ def _build_team_state(
     boss_defeats: list[dict],
     rain_mode: bool = False,
 ) -> TeamState:
-    progress_map: dict[int, dict] = {r["quest_id"]: r for r in quest_progress}
+    progress_map: dict[int, dict] = _sync_progress({r["quest_id"]: r for r in quest_progress})
     defeat_map:   dict[int, dict] = {r["boss_id"]:  r for r in boss_defeats}
 
     active_quests    = RAIN_QUESTS    if rain_mode else QUESTS
