@@ -609,7 +609,7 @@ export default function AdminPage() {
           rel="noreferrer"
           className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors font-bold text-sm"
         >
-          <QrCode size={16} /> 列印魔王 QR 碼
+          <QrCode size={16} /> 顯示 QR 碼與連結
         </a>
         <a
           href={api.adminAllPhotosZipUrl()}
