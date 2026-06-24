@@ -172,7 +172,7 @@ QUESTS: dict[int, QuestDef] = {
     ),
 
     202: QuestDef(
-        id=202, boss_id=2, name='好棒鴨的新朋友', emoji='🐾',
+        id=202, boss_id=2, name='好棒鴨的新朋友', emoji='🤝',
         type='photo_task', order_index=2,
         easy=Diff(
             description='好棒鴨想在動物園交一個新朋友！請小隊一起討論哪隻動物最適合當好棒鴨的朋友，找到牠並拍照上傳！📸',
