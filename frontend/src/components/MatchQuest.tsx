@@ -9,9 +9,10 @@ interface Props {
 const LEVEL_ORDER = ['極危 CR', '瀕危 EN', '易危 VU', '無危 LC']
 
 const ANIMAL_IMAGE: Record<string, string> = {
-  '台灣梅花鹿': '/deer.png',
-  '蘇卡達象龜': '/turtle.png',
-  '河馬':       '/hippo.png',
+  '台灣梅花鹿':     '/deer.png',
+  '蘇卡達象龜':     '/turtle.png',
+  '河馬':           '/hippo.png',
+  '婆羅洲紅毛猩猩': '/gorilla.png',
 }
 
 const LC: Record<string, { bg: string; border: string; text: string; hex: string }> = {
