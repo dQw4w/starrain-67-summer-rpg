@@ -52,17 +52,8 @@ def _sync_progress(progress_map: dict) -> dict:
     return synced
 
 
-def _rotate(items: list, team_id: int) -> list:
-    """Cyclic-shift so each team starts at a different quest (human traffic control)."""
-    n = len(items)
-    if n <= 1:
-        return list(items)
-    shift = (team_id - 1) % n
-    return items[shift:] + items[:shift]
-
-
-def _resolve_photo_sequence(seq: list[PhotoQuest], progress_map: dict, team_id: int = 1) -> list[Quest]:
-    ordered = _rotate(sorted(seq, key=lambda q: q.order_index), team_id)
+def _resolve_photo_sequence(seq: list[PhotoQuest], progress_map: dict) -> list[Quest]:
+    ordered = sorted(seq, key=lambda q: q.order_index)
     return [_resolve_photo_quest(pq, progress_map, locked=False) for pq in ordered]
 
 
@@ -83,11 +74,10 @@ def _build_team_state(
     for boss_def in sorted(BOSSES.values(), key=lambda b: b.order_index):
         seq = boss_photo_sequence(boss_def.id, difficulty, rain_mode=rain_mode)
         if seq is not None:
-            quests = _resolve_photo_sequence(seq, progress_map, team_id)
+            quests = _resolve_photo_sequence(seq, progress_map)
         else:
-            raw = sorted(active_boss_quests[boss_def.id], key=lambda q: q.order_index)
-            ordered = _rotate(raw, team_id)
-            quests = [_resolve_quest(q, getattr(q, difficulty), progress_map) for q in ordered]
+            quests = [_resolve_quest(q, getattr(q, difficulty), progress_map)
+                      for q in sorted(active_boss_quests[boss_def.id], key=lambda q: q.order_index)]
         all_done = bool(quests) and all(q.completed for q in quests)
         defeat = defeat_map.get(boss_def.id, {})
         boss_list.append(Boss(
