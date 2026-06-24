@@ -99,7 +99,7 @@ QUESTS: dict[int, QuestDef] = {
             ],
         ),
         hard=Diff(  # ← previously the normal version
-            description='下列何者不是鴕鳥的特徵？',
+            description='下列何者「不是」鴕鳥的特徵？',
             options=[
                 {"text": "體重可達150公斤", "correct": False},
                 {"text": "最快跑步速度為30 km/h", "correct": True},
