@@ -121,7 +121,7 @@ export default function TapBattle({ bossId, bossEmoji, bossName, onVictory, onCl
         {/* Instructions */}
         <div className="shrink-0 px-8 text-center">
           <p className="text-white/80 text-base font-bold leading-relaxed">
-            三個人每人把一隻手指<br />放在自己的攻擊按鈕上
+            三個小隊員每人把一隻手指<br />放在自己的攻擊按鈕上
           </p>
           <p className="text-white/40 text-sm mt-2">
             準備好後，按上方「準備好了」開始！
