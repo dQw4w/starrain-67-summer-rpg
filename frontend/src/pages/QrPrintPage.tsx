@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
+import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react'
 import { Download, Printer } from 'lucide-react'
 import { bossQrContent } from '../components/QrScanner'
 import { api } from '../api'
@@ -22,37 +22,25 @@ interface TeamInfo {
 const teamUrl = (token: string) => `${window.location.origin}/team/${token}`
 
 function DownloadableQr({ value, filename }: { value: string; filename: string }) {
-  const ref = useRef<HTMLDivElement>(null)
+  const hiddenRef = useRef<HTMLDivElement>(null)
 
   const download = () => {
-    const svg = ref.current?.querySelector('svg')
-    if (!svg) return
-    const svgData = new XMLSerializer().serializeToString(svg)
-    const blob = new Blob([svgData], { type: 'image/svg+xml' })
-    const blobUrl = URL.createObjectURL(blob)
-    const img = new Image()
-    img.onload = () => {
-      const px = 400
-      const canvas = document.createElement('canvas')
-      canvas.width = px
-      canvas.height = px
-      const ctx = canvas.getContext('2d')!
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, px, px)
-      ctx.drawImage(img, 0, 0, px, px)
-      URL.revokeObjectURL(blobUrl)
-      const a = document.createElement('a')
-      a.download = filename + '.png'
-      a.href = canvas.toDataURL('image/png')
-      a.click()
-    }
-    img.src = blobUrl
+    const canvas = hiddenRef.current?.querySelector('canvas')
+    if (!canvas) return
+    const a = document.createElement('a')
+    a.download = filename + '.png'
+    a.href = canvas.toDataURL('image/png')
+    a.click()
   }
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div ref={ref} className="bg-white p-3 rounded-xl border border-gray-100">
+      <div className="bg-white p-3 rounded-xl border border-gray-100">
         <QRCodeSVG value={value} size={160} bgColor="#ffffff" fgColor="#1a1a1a" level="M" />
+      </div>
+      {/* Hidden canvas with marginSize=4 quiet zone — used only for PNG export */}
+      <div ref={hiddenRef} className="hidden">
+        <QRCodeCanvas value={value} size={400} bgColor="#ffffff" fgColor="#1a1a1a" level="M" includeMargin />
       </div>
       <button
         onClick={download}
