@@ -7,6 +7,7 @@ from typing import Optional
 class Diff:
     description: str
     options: Optional[list[dict]] = None
+    type_override: Optional[str] = None  # overrides QuestDef.type for this difficulty only
 
 
 @dataclass
@@ -32,6 +33,7 @@ class BossDef:
     location_name: str
     location_hint: str
     order_index: int
+    rain_location_name: Optional[str] = None
     rain_location_hint: Optional[str] = None
 
 
@@ -58,6 +60,7 @@ BOSSES: dict[int, BossDef] = {
         id=1, name='米怪', emoji='⭐',
         location_name='新竹市立動物園',
         location_hint='馬來熊對面的涼亭座椅區',
+        rain_location_name='玻璃工藝博物館',
         rain_location_hint='玻工館門口',
         order_index=1,
     ),
@@ -65,6 +68,8 @@ BOSSES: dict[int, BossDef] = {
         id=2, name='粉怪', emoji='🌸',
         location_name='新竹市立動物園',
         location_hint='河馬後面的長椅',
+        rain_location_name='圖書館、孔廟',
+        rain_location_hint='孔廟放行李處',
         order_index=2,
     ),
 }
@@ -214,7 +219,6 @@ for _q in QUESTS.values():
 
 # ── Rain-backup quests (placeholder — replace with real content before event) ─
 
-_NI_PHOTO = Diff(description='Not Implemented', options=[{"count": 1}])
 
 _GLASS_1 = Diff(
     description='說出或指出你看到最喜歡的玻璃工藝品，並請小隊長拍照記錄起來！📸',
@@ -246,21 +250,64 @@ RAIN_QUESTS: dict[int, QuestDef] = {
         easy=_GLASS_1, normal=_GLASS_2, hard=_GLASS_3,
     ),
     201: QuestDef(
-        id=201, boss_id=2, name='Not Implemented', emoji='🚧',
+        id=201, boss_id=2, name='大象綾子', emoji='🐘',
         type='photo_task', order_index=1,
-        easy=_NI_PHOTO, normal=_NI_PHOTO, hard=_NI_PHOTO,
+        easy=Diff(
+            description='（圖書館）找到大象綾子的標本，全小隊「安靜地」在牠前面拍一張合照並上傳！📸',
+            options=[{"count": 1}],
+        ),
+        normal=Diff(
+            description='（圖書館）找到大象綾子的標本！牠是哪一年來到新竹動物園的？',
+            options=[
+                {"text": "1952年", "correct": False},
+                {"text": "1958年", "correct": False},
+                {"text": "1962年", "correct": True},
+                {"text": "1968年", "correct": False},
+            ],
+            type_override='multiple_choice',
+        ),
+        hard=Diff(
+            description='（圖書館）找到大象綾子的標本，請所有小隊員分享：從牠的文字介紹中，你們學到了什麼？（Hint：我們應不應該不守規則去餵食動物園裡的動物？）',
+            type_override='task',
+        ),
     ),
     202: QuestDef(
-        id=202, boss_id=2, name='Not Implemented', emoji='🚧',
+        id=202, boss_id=2, name='孔廟紀念章', emoji='📮',
         type='photo_task', order_index=2,
-        easy=_NI_PHOTO, normal=_NI_PHOTO, hard=_NI_PHOTO,
+        easy=Diff(
+            description='（孔廟）找到孔子神位左方的紀念章，所有小隊員各在手冊第x頁蓋一個印，並請小隊長把三個人的手冊一起拍照上傳！📸',
+            options=[{"count": 1}],
+        ),
+        normal=Diff(
+            description='（孔廟）找到孔子神位左方的紀念章，所有小隊員各在手冊第x頁蓋一個印，並請小隊長把三個人的手冊一起拍照上傳！📸',
+            options=[{"count": 1}],
+        ),
+        hard=Diff(
+            description='（孔廟）找到孔子神位左方的紀念章，所有小隊員各在手冊第x頁蓋一個印，並請小隊長把三個人的手冊一起拍照上傳！📸',
+            options=[{"count": 1}],
+        ),
     ),
     203: QuestDef(
-        id=203, boss_id=2, name='Not Implemented', emoji='🚧',
-        type='task', order_index=3,
-        easy=Diff(description='Not Implemented'),
-        normal=Diff(description='Not Implemented'),
-        hard=Diff(description='Not Implemented'),
+        id=203, boss_id=2, name='孔子神位', emoji='🏛️',
+        type='photo_task', order_index=3,
+        easy=Diff(
+            description='（孔廟）找到孔子的神位，全小隊合照上傳！📸',
+            options=[{"count": 1}],
+        ),
+        normal=Diff(
+            description='（孔廟）找到孔子的神位，其上方有蔣中正先生提的4個字，請問是哪4個字？',
+            options=[
+                {"text": "萬世師表", "correct": False},
+                {"text": "有教無類", "correct": True},
+                {"text": "三人行必有我師", "correct": False},
+                {"text": "學而不思則罔", "correct": False},
+            ],
+            type_override='multiple_choice',
+        ),
+        hard=Diff(
+            description='（孔廟）找到孔子的神位，其上方蔣中正先生提的4個字是「有教無類」。請每位小隊員舉例：一個老師要怎麼做才能符合這4個字的精神？（組員分享後，小隊長打勾確認）',
+            type_override='task',
+        ),
     ),
 }
 

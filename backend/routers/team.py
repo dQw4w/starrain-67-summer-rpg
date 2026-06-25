@@ -17,7 +17,8 @@ def _resolve_quest(q: QuestDef, diff: Diff, progress_map: dict) -> Quest:
     options = [QuestOption(**o) for o in diff.options] if diff.options else None
     prog = progress_map.get(q.id, {})
     return Quest(
-        id=q.id, boss_id=q.boss_id, name=q.name, emoji=q.emoji, type=q.type,
+        id=q.id, boss_id=q.boss_id, name=q.name, emoji=q.emoji,
+        type=diff.type_override or q.type,
         description=diff.description, options=options,
         completed=prog.get("completed", False),
         completed_at=prog.get("completed_at"),
@@ -82,7 +83,7 @@ def _build_team_state(
         defeat = defeat_map.get(boss_def.id, {})
         boss_list.append(Boss(
             id=boss_def.id, name=boss_def.name, emoji=boss_def.emoji,
-            location_name=boss_def.location_name,
+            location_name=(boss_def.rain_location_name or boss_def.location_name) if rain_mode else boss_def.location_name,
             location_hint=(
                 (boss_def.rain_location_hint or boss_def.location_hint) if rain_mode else boss_def.location_hint
             ) if all_done else None,
@@ -141,19 +142,25 @@ def set_difficulty(team_id: int, body: DifficultyUpdate):
 def complete_quest(team_id: int, quest_id: int, body: QuestCompleteRequest):
     if team_id not in TEAMS:
         raise HTTPException(404, "Team not found")
-    quest_def = QUESTS.get(quest_id)
-    if not quest_def:
-        raise HTTPException(404, "Quest not found")
 
     db = get_client()
-    team_res   = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
+    team_res  = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
     difficulty = team_res.data["difficulty"] if team_res.data else "normal"
-    diff: Diff = getattr(quest_def, difficulty)
-    options    = diff.options
+    settings  = db.table("game_settings").select("rain_mode").eq("id", 1).maybe_single().execute()
+    rain_mode = (settings.data or {}).get("rain_mode", False)
 
-    if quest_def.type == "photo_task":
+    active_quests = RAIN_QUESTS if rain_mode else QUESTS
+    quest_def = active_quests.get(quest_id)
+    if quest_def is None:
+        raise HTTPException(404, "Quest not found")
+
+    diff: Diff     = getattr(quest_def, difficulty)
+    options        = diff.options
+    effective_type = diff.type_override or quest_def.type
+
+    if effective_type == "photo_task":
         pass
-    elif quest_def.type == "drag_match":
+    elif effective_type == "drag_match":
         try:
             submitted: dict = json.loads(body.answer_text or "{}")
         except (json.JSONDecodeError, TypeError):
