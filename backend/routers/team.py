@@ -83,7 +83,9 @@ def _build_team_state(
         boss_list.append(Boss(
             id=boss_def.id, name=boss_def.name, emoji=boss_def.emoji,
             location_name=boss_def.location_name,
-            location_hint=boss_def.location_hint if all_done else None,
+            location_hint=(
+                (boss_def.rain_location_hint or boss_def.location_hint) if rain_mode else boss_def.location_hint
+            ) if all_done else None,
             order_index=boss_def.order_index,
             quests=quests, all_quests_done=all_done,
             defeated=defeat.get("defeated", False),

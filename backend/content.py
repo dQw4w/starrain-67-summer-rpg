@@ -32,6 +32,7 @@ class BossDef:
     location_name: str
     location_hint: str
     order_index: int
+    rain_location_hint: Optional[str] = None
 
 
 # ── Teams (hardcoded — names never change) ───────────────────────────────────
@@ -57,6 +58,7 @@ BOSSES: dict[int, BossDef] = {
         id=1, name='米怪', emoji='⭐',
         location_name='新竹市立動物園',
         location_hint='馬來熊對面的涼亭座椅區',
+        rain_location_hint='玻工館門口',
         order_index=1,
     ),
     2: BossDef(
@@ -192,10 +194,10 @@ QUESTS: dict[int, QuestDef] = {
         id=203, boss_id=2, name='動物大哉問', emoji='💬',
         type='task', order_index=3,
         easy=Diff(
-            description='請每個小隊員都說出自己最喜歡的動物！',
+            description='請每個小隊員都說出自己看到最喜歡的動物！',
         ),
         normal=Diff(
-            description='請每個小隊員都說出自己最喜歡的動物，並且說明原因！',
+            description='請每個小隊員都說出自己看到最喜歡的動物，並且說明原因！',
         ),
         hard=Diff(
             description='你們認為動物園是否應該存在？為什麼？請每個小隊員分享自己的想法。',
@@ -212,25 +214,36 @@ for _q in QUESTS.values():
 
 # ── Rain-backup quests (placeholder — replace with real content before event) ─
 
-_NI = Diff(description='Not Implemented', options=[{"text": "Not Implemented", "correct": True}])
 _NI_PHOTO = Diff(description='Not Implemented', options=[{"count": 1}])
-_NI_DRAG = Diff(description='Not Implemented', options=[{"animal": "Not Implemented", "level": "無危 LC"}])
+
+_GLASS_1 = Diff(
+    description='說出或指出你看到最喜歡的玻璃工藝品，並請小隊長拍照記錄起來！📸',
+    options=[{"count": 1}],
+)
+_GLASS_2 = Diff(
+    description='在手冊第x頁上，畫出你看到最喜歡的玻璃工藝品（請小隊長把手冊的頁面拍照上傳）📸',
+    options=[{"count": 1}],
+)
+_GLASS_3 = Diff(
+    description='在手冊第x頁上，畫出你看到最喜歡的玻璃工藝品，並寫下理由（請小隊長把手冊的頁面拍照上傳）📸',
+    options=[{"count": 1}],
+)
 
 RAIN_QUESTS: dict[int, QuestDef] = {
     1: QuestDef(
-        id=1, boss_id=1, name='Not Implemented', emoji='🚧',
-        type='multiple_choice', order_index=1,
-        easy=_NI, normal=_NI, hard=_NI,
+        id=1, boss_id=1, name='小隊員①的任務', emoji='🎨',
+        type='photo_task', order_index=1,
+        easy=_GLASS_1, normal=_GLASS_2, hard=_GLASS_3,
     ),
     2: QuestDef(
-        id=2, boss_id=1, name='Not Implemented', emoji='🚧',
+        id=2, boss_id=1, name='小隊員②的任務', emoji='🎨',
         type='photo_task', order_index=2,
-        easy=_NI_PHOTO, normal=_NI_PHOTO, hard=_NI_PHOTO,
+        easy=_GLASS_1, normal=_GLASS_2, hard=_GLASS_3,
     ),
     7: QuestDef(
-        id=7, boss_id=1, name='Not Implemented', emoji='🚧',
-        type='drag_match', order_index=3,
-        easy=_NI_DRAG, normal=_NI_DRAG, hard=_NI_DRAG,
+        id=7, boss_id=1, name='小隊員③的任務', emoji='🎨',
+        type='photo_task', order_index=3,
+        easy=_GLASS_1, normal=_GLASS_2, hard=_GLASS_3,
     ),
     201: QuestDef(
         id=201, boss_id=2, name='Not Implemented', emoji='🚧',
@@ -289,8 +302,8 @@ PHOTO_QUESTS: dict[int, PhotoQuest] = {
 
 def boss_photo_sequence(boss_id: int, difficulty: str, rain_mode: bool = False) -> Optional[list[PhotoQuest]]:
     """The photo-task sequence for a boss, or None to use the regular QUESTS."""
-    if boss_id == 1 and difficulty == "easy":
-        return RAIN_BOSS1_EASY_ANIMALS if rain_mode else BOSS1_EASY_ANIMALS
+    if boss_id == 1 and difficulty == "easy" and not rain_mode:
+        return BOSS1_EASY_ANIMALS
     return None
 
 
