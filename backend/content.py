@@ -138,7 +138,7 @@ QUESTS: dict[int, QuestDef] = {
         normal=Diff(
             description='連線配對：把每隻動物和牠的保育等級連起來！',
             options=[
-                {"animal": "婆羅洲紅毛猩猩", "level": "極危 CR"},
+                {"animal": "河馬",           "level": "易危 VU"},
                 {"animal": "台灣梅花鹿",     "level": "無危 LC"},
             ],
         ),

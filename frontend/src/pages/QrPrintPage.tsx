@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { Printer } from 'lucide-react'
+import { Download, Printer } from 'lucide-react'
 import { bossQrContent } from '../components/QrScanner'
 import { api } from '../api'
 
@@ -20,6 +20,49 @@ interface TeamInfo {
 }
 
 const teamUrl = (token: string) => `${window.location.origin}/team/${token}`
+
+function DownloadableQr({ value, filename }: { value: string; filename: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  const download = () => {
+    const svg = ref.current?.querySelector('svg')
+    if (!svg) return
+    const svgData = new XMLSerializer().serializeToString(svg)
+    const blob = new Blob([svgData], { type: 'image/svg+xml' })
+    const blobUrl = URL.createObjectURL(blob)
+    const img = new Image()
+    img.onload = () => {
+      const px = 400
+      const canvas = document.createElement('canvas')
+      canvas.width = px
+      canvas.height = px
+      const ctx = canvas.getContext('2d')!
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, px, px)
+      ctx.drawImage(img, 0, 0, px, px)
+      URL.revokeObjectURL(blobUrl)
+      const a = document.createElement('a')
+      a.download = filename + '.png'
+      a.href = canvas.toDataURL('image/png')
+      a.click()
+    }
+    img.src = blobUrl
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div ref={ref} className="bg-white p-3 rounded-xl border border-gray-100">
+        <QRCodeSVG value={value} size={160} bgColor="#ffffff" fgColor="#1a1a1a" level="M" />
+      </div>
+      <button
+        onClick={download}
+        className="print:hidden flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors"
+      >
+        <Download size={12} /> 下載 PNG
+      </button>
+    </div>
+  )
+}
 
 const TEAM_COLORS: Record<number, { border: string; badge: string; text: string }> = {
   1: { border: 'border-blue-300',   badge: 'bg-blue-100 text-blue-700',   text: 'text-blue-700'   },
@@ -75,9 +118,7 @@ export default function QrPrintPage() {
                   <h3 className="text-2xl font-black text-gray-900">{boss.name}</h3>
                   <p className="text-gray-500 text-sm mt-1">{boss.location_name}</p>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-gray-100">
-                  <QRCodeSVG value={bossQrContent(boss.id)} size={160} bgColor="#ffffff" fgColor="#1a1a1a" level="M" />
-                </div>
+                <DownloadableQr value={bossQrContent(boss.id)} filename={`boss-${boss.id}-${boss.name}`} />
                 <div className="text-center">
                   <p className="text-xs font-mono text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
                     {bossQrContent(boss.id)}
@@ -117,9 +158,7 @@ export default function QrPrintPage() {
                     <h3 className="text-2xl font-black text-gray-900">{team.name}</h3>
                   </div>
 
-                  <div className="bg-white p-3 rounded-xl border border-gray-100">
-                    <QRCodeSVG value={url} size={160} bgColor="#ffffff" fgColor="#1a1a1a" level="M" />
-                  </div>
+                  <DownloadableQr value={url} filename={`team-${team.id}-${team.name}`} />
 
                   <div className="text-center w-full">
                     <a
