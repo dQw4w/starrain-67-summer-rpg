@@ -41,6 +41,9 @@ export const api = {
   defeatBoss: (teamId: number, bossId: number) =>
     req(`/team/${teamId}/boss/${bossId}/defeat`, { method: 'POST' }),
 
+  resetTeamByToken: (token: string) =>
+    req(`/team/t/${token}/reset`, { method: 'POST' }),
+
   // admin
   adminListTeams: () => req<{ id: number; name: string; difficulty: string; token: string }[]>('/admin/teams'),
   adminGetTeam: (id: number) => req<TeamState>(`/admin/teams/${id}`),

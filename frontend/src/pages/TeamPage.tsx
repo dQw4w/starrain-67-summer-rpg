@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Settings } from 'lucide-react'
 import type { TeamState, GameSettings } from '../types'
 import { api } from '../api'
 import BossCard from '../components/BossCard'
@@ -9,6 +9,7 @@ import DifficultyModal from '../components/DifficultyModal'
 
 export default function TeamPage() {
   const { token } = useParams<{ token: string }>()
+  const navigate = useNavigate()
 
   const [state, setState] = useState<TeamState | null>(null)
   const [settings, setSettings] = useState<GameSettings>({ qr_test_mode: false, rain_mode: false })
@@ -101,12 +102,20 @@ export default function TeamPage() {
           </div>
         </div>
 
-        <button
-          onClick={load}
-          className="text-white/40 hover:text-white transition-colors p-2"
-        >
-          <RefreshCw size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => navigate(`/team/${token}/settings`)}
+            className="text-white/40 hover:text-white transition-colors p-2"
+          >
+            <Settings size={20} />
+          </button>
+          <button
+            onClick={load}
+            className="text-white/40 hover:text-white transition-colors p-2"
+          >
+            <RefreshCw size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Boss cards */}

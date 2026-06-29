@@ -233,6 +233,17 @@ async def upload_quest_photos(
     return {"ok": True, "correct": True}
 
 
+@router.post("/t/{token}/reset")
+def reset_team_by_token(token: str):
+    team_id = TEAM_TOKENS.get(token)
+    if team_id is None:
+        raise HTTPException(404, "Team not found")
+    db = get_client()
+    db.table("team_quest_progress").update({"completed": False, "completed_at": None}).eq("team_id", team_id).execute()
+    db.table("team_boss_defeats").update({"defeated": False, "defeated_at": None}).eq("team_id", team_id).execute()
+    return {"ok": True}
+
+
 @router.post("/{team_id}/boss/{boss_id}/defeat")
 def defeat_boss(team_id: int, boss_id: int):
     if team_id not in TEAMS:
