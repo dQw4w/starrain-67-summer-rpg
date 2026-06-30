@@ -57,7 +57,7 @@ export default function QrScanner({ bossId, bossName, testMode, onSuccess, onClo
               setScanned(true)
               safeStop(scanner).finally(() => setTimeout(() => onSuccessRef.current(), 800))
             } else {
-              setError('QR碼不符，請掃描正確的魔王QR碼！')
+              setError('QR碼不符，請掃描正確的手下QR碼！')
               setTimeout(() => setError(null), 2000)
             }
           },

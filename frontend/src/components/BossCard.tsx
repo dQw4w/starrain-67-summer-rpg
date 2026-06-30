@@ -130,7 +130,7 @@ export default function BossCard({ boss, testMode, rainMode, onQuestSubmit, onPh
               className="w-full py-3 px-4 rounded-2xl bg-yellow-500/20 border border-brand-yellow/40 text-brand-yellow font-bold flex items-center justify-center gap-2"
             >
               <MapPin size={18} />
-              {showLocation ? '隱藏魔王位置' : '查看魔王在哪裡！'}
+              {showLocation ? '隱藏手下位置' : '查看手下在哪裡！'}
             </motion.button>
 
             <AnimatePresence>

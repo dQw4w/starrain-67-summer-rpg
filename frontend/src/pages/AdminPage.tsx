@@ -282,7 +282,7 @@ function TeamCard({
           <div>
             <h2 className="text-xl font-black text-white">{team.name}</h2>
             <p className="text-white/40 text-sm mt-0.5">
-              任務 {doneQuests}/{totalQuests} · 魔王 {defeatedBosses}/{team.total_bosses}
+              任務 {doneQuests}/{totalQuests} · 手下 {defeatedBosses}/{team.total_bosses}
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0 mt-1">
@@ -651,7 +651,7 @@ export default function AdminPage() {
             <div key={t.team_id} className="bg-white/5 rounded-2xl p-3 text-center border border-white/10">
               <p className="text-white font-bold text-sm truncate">{t.name.replace('探險小隊', '隊')}</p>
               <p className="text-white/40 text-xs mt-0.5">{done}/{total} 任務</p>
-              <p className="text-white/40 text-xs">{t.puzzle_pieces}/{t.total_bosses} 魔王</p>
+              <p className="text-white/40 text-xs">{t.puzzle_pieces}/{t.total_bosses} 手下</p>
               <p className={`text-xs mt-1 font-bold ${DIFF_META[t.difficulty]?.color}`}>
                 {DIFF_META[t.difficulty]?.label}
               </p>

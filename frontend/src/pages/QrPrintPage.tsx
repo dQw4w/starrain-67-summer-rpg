@@ -93,7 +93,7 @@ export default function QrPrintPage() {
         {/* ── Boss QR codes ─────────────────────────────────────────────── */}
         <section>
           <h2 className="text-xl font-black text-gray-700 mb-5 print:text-base print:mb-3">
-            🗺️ 魔王 QR 碼 <span className="font-normal text-gray-400 text-sm ml-2">放置於各場地</span>
+            🗺️ 手下 QR 碼 <span className="font-normal text-gray-400 text-sm ml-2">放置於各場地</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 print:grid-cols-3 print:gap-4">
             {bosses.map(boss => (

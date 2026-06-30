@@ -1,4 +1,4 @@
--- 改成只有兩個魔王：米怪（Boss 1）、粉怪（Boss 2）
+-- 改成只有兩個手下：米怪（Boss 1）、粉怪（Boss 2）
 
 -- 1. 更新 Boss 1 → 米怪
 UPDATE bosses SET
