@@ -1,26 +1,29 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle, Lock, MapPin, QrCode, Map, X } from 'lucide-react'
+import { CheckCircle, Lock, MapPin, QrCode, Map, X, Swords } from 'lucide-react'
 import type { Boss, Quest } from '../types'
 import QuestModal from './QuestModal'
 import QrScanner from './QrScanner'
 import TapBattle from './TapBattle'
+import RainBattle from './RainBattle'
 import BossImage from './BossImage'
 
 interface Props {
   boss: Boss
   testMode: boolean
   rainMode: boolean
+  difficulty: string
   onQuestSubmit: (questId: number, answerIndex?: number, answerText?: string) => Promise<boolean>
   onPhotoSubmit: (questId: number, files: File[]) => Promise<boolean>
   onDefeat: (bossId: number) => Promise<void>
 }
 
-export default function BossCard({ boss, testMode, rainMode, onQuestSubmit, onPhotoSubmit, onDefeat }: Props) {
+export default function BossCard({ boss, testMode, rainMode, difficulty, onQuestSubmit, onPhotoSubmit, onDefeat }: Props) {
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [showLocation, setShowLocation] = useState(false)
-  const [scanning, setScanning] = useState(false)   // QR scan step
-  const [battling, setBattling] = useState(false)   // tap battle step
+  const [scanning, setScanning] = useState(false)    // QR scan step (sunny mode)
+  const [battling, setBattling] = useState(false)    // tap battle step (sunny mode)
+  const [rainBattling, setRainBattling] = useState(false)  // rain mode direct battle
   const [showMap, setShowMap] = useState(false)
 
   const doneCount = boss.quests.filter(q => q.completed).length
@@ -121,8 +124,8 @@ export default function BossCard({ boss, testMode, rainMode, onQuestSubmit, onPh
           </div>
         )}
 
-        {/* Battle section */}
-        {!boss.defeated && boss.all_quests_done && (
+        {/* Battle section — sunny mode */}
+        {!rainMode && !boss.defeated && boss.all_quests_done && (
           <div className="space-y-3">
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -157,6 +160,18 @@ export default function BossCard({ boss, testMode, rainMode, onQuestSubmit, onPh
               掃描QR碼挑戰 {boss.name}！
             </motion.button>
           </div>
+        )}
+
+        {/* Battle section — rain mode (direct battle, no quests/QR) */}
+        {rainMode && !boss.defeated && (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setRainBattling(true)}
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-lg shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
+          >
+            <Swords size={22} />
+            ☔ 挑戰 {boss.name}！
+          </motion.button>
         )}
 
         {/* Zoo map button — boss 1, non-rain mode only */}
@@ -234,6 +249,17 @@ export default function BossCard({ boss, testMode, rainMode, onQuestSubmit, onPh
           bossName={boss.name}
           onVictory={async () => { await onDefeat(boss.id) }}
           onClose={() => setBattling(false)}
+        />
+      )}
+
+      {rainBattling && (
+        <RainBattle
+          bossId={boss.id}
+          bossEmoji={boss.emoji}
+          bossName={boss.name}
+          difficulty={difficulty}
+          onVictory={async () => { await onDefeat(boss.id) }}
+          onClose={() => setRainBattling(false)}
         />
       )}
     </>

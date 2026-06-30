@@ -251,22 +251,26 @@ def defeat_boss(team_id: int, boss_id: int):
     db = get_client()
     team_res   = db.table("teams").select("difficulty").eq("id", team_id).maybe_single().execute()
     difficulty = team_res.data["difficulty"] if team_res.data else "normal"
-    seq = boss_photo_sequence(boss_id, difficulty)
-    if seq is not None:
-        quest_ids = [q.id for q in seq]
-    else:
-        quest_ids = [q.id for q in BOSS_QUESTS.get(boss_id, [])]
-    if quest_ids:
-        progress_res = (
-            db.table("team_quest_progress")
-            .select("quest_id, completed")
-            .eq("team_id", team_id)
-            .in_("quest_id", quest_ids)
-            .execute()
-        )
-        done = {r["quest_id"] for r in progress_res.data if r["completed"]}
-        if not all(qid in done for qid in quest_ids):
-            raise HTTPException(400, "Not all quests completed for this boss")
+    settings   = db.table("game_settings").select("rain_mode").eq("id", 1).maybe_single().execute()
+    rain_mode  = (settings.data or {}).get("rain_mode", False)
+
+    if not rain_mode:
+        seq = boss_photo_sequence(boss_id, difficulty)
+        if seq is not None:
+            quest_ids = [q.id for q in seq]
+        else:
+            quest_ids = [q.id for q in BOSS_QUESTS.get(boss_id, [])]
+        if quest_ids:
+            progress_res = (
+                db.table("team_quest_progress")
+                .select("quest_id, completed")
+                .eq("team_id", team_id)
+                .in_("quest_id", quest_ids)
+                .execute()
+            )
+            done = {r["quest_id"] for r in progress_res.data if r["completed"]}
+            if not all(qid in done for qid in quest_ids):
+                raise HTTPException(400, "Not all quests completed for this boss")
     now = datetime.now(timezone.utc).isoformat()
     db.table("team_boss_defeats").upsert({
         "team_id": team_id, "boss_id": boss_id,

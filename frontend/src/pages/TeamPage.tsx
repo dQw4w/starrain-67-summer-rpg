@@ -132,6 +132,7 @@ export default function TeamPage() {
                 boss={boss}
                 testMode={settings.qr_test_mode}
                 rainMode={settings.rain_mode}
+                difficulty={state.difficulty}
                 onQuestSubmit={handleQuestSubmit}
                 onPhotoSubmit={handlePhotoSubmit}
                 onDefeat={handleDefeat}
